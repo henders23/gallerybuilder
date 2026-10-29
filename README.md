@@ -13,15 +13,16 @@ so anyone can lay out their own gallery.
 | --- | --- |
 | `index.html` | The app: the designer (start screen), the 3D walk-through engine, and the exporter. |
 | `promenade.html` | The original Health & Life Promenade, unchanged. |
-| `mesmerize-kevin-macleod.mp3` | Background music, “Mesmerize” by Kevin MacLeod (incompetech.com), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). |
+| `mesmerize-kevin-macleod.mp3` | Background music used only by the original Promenade: “Mesmerize” by Kevin MacLeod (incompetech.com), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Gallery Builder itself has no music. |
 
 It's a static site with no build step. Serve the folder with any static host (Vercel, GitHub Pages,
 `python3 -m http.server`) and open `index.html`.
 
 ## The designer
 
-- **Start screen.** Start with a five-room gallery (an entrance hall, a long gallery, a rotunda, a sculpture
-  court and a quiet room), start from a blank site, or open a saved design. The site is 300 × 300 m.
+- **Start screen.** Start from **The Dack Gallery**, a fully editable, downloadable 3D gallery (an entrance
+  hall, a long gallery, a rotunda, a sculpture court and a quiet room, all of which can be changed or added
+  to), start from a blank site, or open a saved design. The site is 300 × 300 m.
 - **Rooms.** Draw square or round rooms, drag them into place and resize them with the handles. Each room
   has its own name and route number, ceiling height, floor (oak parquet, flagstone, marble, concrete, or
   carpet in eight colours), wall colour, lighting mood, accent colour and placard text.
@@ -43,8 +44,7 @@ Your work saves in the browser as you go. **File → Save design file** download
 ## Export
 
 **Export HTML** downloads one self-contained page. The design, including your uploaded pictures, is
-embedded in it. It needs an internet connection, because three.js loads from a CDN. You can also put the
-music inside the file, which adds about 9 MB. **File → Open** reads an exported page back into the
+embedded in it. It needs an internet connection, because three.js loads from a CDN. **File → Open** reads an exported page back into the
 designer, so you can keep editing it.
 
 ## How it fits together

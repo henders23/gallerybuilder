@@ -38,8 +38,6 @@
     display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-size:12.5px;color:rgba(232,221,201,.5)}
   #viewer #keys b{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--plaster);font-weight:600;
     background:rgba(232,221,201,.1);padding:2px 7px;margin-right:6px;font-size:11px}
-  #viewer #credit{margin-top:18px;font-size:11px;line-height:1.5;color:rgba(232,221,201,.38)}
-  #viewer #credit a{color:inherit}
 
   #viewer #hud{position:fixed;inset:0;z-index:10;pointer-events:none;display:none}
   #viewer #reticle{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
@@ -378,7 +376,7 @@
     <div class="menuWrap">
       <button class="tb" id="fileBtn">File <span style="opacity:.6">▾</span></button>
       <div class="menu" id="fileMenu">
-        <button data-act="new5">New — five-room gallery</button>
+        <button data-act="new5">New — from the Dack Gallery</button>
         <button data-act="blank">New — blank site</button>
         <hr>
         <button data-act="open">Open a design or exported gallery…</button>
@@ -427,7 +425,7 @@
     <div class="choices">
       <button class="choice" data-start="new5">
         <svg viewBox="0 0 160 84"><g fill="#e4cfa9" stroke="#3b2a1d" stroke-width="2"><rect x="18" y="38" width="28" height="22"/><rect x="46" y="38" width="44" height="22"/><rect x="46" y="14" width="28" height="24"/><rect x="74" y="12" width="40" height="25"/></g><ellipse cx="102" cy="49" rx="12" ry="12" fill="#e4cfa9" stroke="#3b2a1d" stroke-width="2"/><g fill="#c38d3c"><rect x="44" y="45" width="4" height="7"/><rect x="88" y="45" width="4" height="7"/><rect x="56" y="36" width="7" height="4"/></g></svg>
-        <b>Start with five rooms</b><span>A ready-made gallery to explore and adapt: a hall, a long gallery, a rotunda, a court and a quiet room.</span>
+        <b>Start with the Dack Gallery</b><span>A fully editable, downloadable 3D gallery to begin from. Change any room, wall, floor or picture — or add more.</span>
       </button>
       <button class="choice" data-start="blank">
         <svg viewBox="0 0 160 84"><g stroke="#cdbb9c" stroke-width="1"><path d="M0 14H160M0 28H160M0 42H160M0 56H160M0 70H160M20 0V84M40 0V84M60 0V84M80 0V84M100 0V84M120 0V84M140 0V84"/></g><rect x="62" y="30" width="36" height="24" fill="none" stroke="#a8782f" stroke-width="2" stroke-dasharray="5 4"/></svg>
@@ -454,8 +452,6 @@
     <p class="lead">You get one HTML file. Open it in any modern browser to walk through the gallery — put it on any
       web host to share it.</p>
     <div class="f"><label for="exName">File name</label><input id="exName" type="text"></div>
-    <label class="chk" id="exMusicRow"><input type="checkbox" id="exMusic"> Put the background music inside the file (adds about 9 MB)</label>
-    <p class="help" id="exMusicHelp" style="margin:-4px 0 12px 26px">Otherwise, keep <code>mesmerize-kevin-macleod.mp3</code> in the same folder as the file for music to play.</p>
     <ul class="help" style="margin:0 0 18px;padding-left:18px;line-height:1.6">
       <li>The 3D engine (three.js) loads from the internet, so viewers need to be online.</li>
       <li>Your design travels inside the file: open it here again with <b>File → Open</b> to keep editing.</li>
@@ -508,14 +504,11 @@
     <div data-builder><button class="ghostBtn" id="backBtn0">← Back to the design</button></div>
     <div id="keys">
       <div><b>Mouse</b>Look</div><div><b>W A S D</b>Walk</div><div><b>Shift</b>Stride</div>
-      <div><b>E</b>View exhibit</div><div><b>M</b>Gallery map</div><div><b>B</b>Music</div><div><b>Esc</b>Release cursor</div>
+      <div><b>E</b>View exhibit</div><div><b>M</b>Gallery map</div><div><b>Esc</b>Release cursor</div>
     </div>
-    <div id="credit">Music: “Mesmerize” by Kevin MacLeod (<a href="https://incompetech.com/" target="_blank" rel="noopener">incompetech.com</a>),
-      licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></div>
   </div>
 </div>
 
-<audio id="bgm" src="mesmerize-kevin-macleod.mp3" loop preload="none"></audio>
 <div id="joyBase"><div id="joyKnob"></div></div>
 <div id="pauseVeil"><div class="pv">Paused<span>Click to carry on from where you were · M for map</span></div></div>
 <div id="fullView"></div>
@@ -526,7 +519,6 @@
   <div id="prompt">Press E to view</div>
   <div id="tools">
     <button class="tool back" id="backBtn" data-builder>← Back to design</button>
-    <button class="tool" id="musBtn">Music · On</button>
     <button class="tool" id="mapBtn">Map</button>
     <button class="tool" id="dirBtn">Directory</button>
     <button class="tool" id="upBtn">Add work</button>
@@ -880,7 +872,7 @@ function fix(D){
   D.est=typeof D.est==='string'?D.est:'A walkable gallery';
   D.subtitle=typeof D.subtitle==='string'?D.subtitle:'';
   D.intro=typeof D.intro==='string'?D.intro:'';
-  D.music=D.music!==false;
+  delete D.music;   // older designs carried a music switch
   for(const k of ['rooms','doors','walls','items'])if(!Array.isArray(D[k]))D[k]=[];
   const num=(v,d)=>Number.isFinite(+v)?+v:d;
   for(const r of D.rooms){
@@ -2382,25 +2374,6 @@ function updateContext(){
 const entrance=$('entrance'),hud=$('hud'),pauseVeil=$('pauseVeil');
 pauseVeil.addEventListener('click',()=>{pauseVeil.classList.remove('open');resume();});
 
-/* ---- music: starts on entry, remembered between visits ---- */
-const bgm=$('bgm');bgm.volume=.32;
-let musicOn=true;
-try{musicOn=localStorage.getItem('gallerybuilder-music')!=='off';}catch(e){}
-const musBtn=$('musBtn');
-const musicAllowed=()=>D&&D.music!==false;
-function setMusic(on,play=true){
-  musicOn=on;
-  try{localStorage.setItem('gallerybuilder-music',on?'on':'off');}catch(e){}
-  musBtn.textContent='Music · '+(on?'On':'Off');
-  if(on&&play&&musicAllowed())bgm.play().catch(()=>{});
-  if(!on)bgm.pause();
-}
-setMusic(musicOn,false);
-bgm.addEventListener('error',()=>{musBtn.style.display='none';});
-musBtn.onclick=()=>setMusic(!musicOn);
-addEventListener('keydown',e=>{
-  if(running&&e.code==='KeyB'&&!sheetOpen&&musicAllowed())setMusic(!musicOn);   // works while walking or paused
-});
 const detail=$('detailSheet'),dirSheet=$('dirSheet'),upSheet=$('upSheet'),mapSheet=$('mapSheet');
 let sheetOpen=false;
 const openSheet=el=>{el.classList.add('open');sheetOpen=true;
@@ -2606,7 +2579,6 @@ const resume=()=>{
   else controls.lock();
 };
 $('enterBtn').onclick=()=>{
-  if(musicOn&&musicAllowed())bgm.play().catch(()=>{});   // entering is a user gesture, so autoplay is allowed
   if(IS_TOUCH)resume();else controls.lock();
 };
 let joy=null;
@@ -2799,9 +2771,6 @@ function open(design,opts){
   $('plSub').style.display=D.subtitle?'':'none';
   $('mapTitle').textContent=D.title||'Gallery map';
   if(OPTS.standalone)document.title=D.title||'Gallery';
-  musBtn.style.display=D.music?'':'none';
-  $('credit').style.display=D.music?'':'none';
-  [...$('keys').children].forEach(k=>{if(k.textContent.includes('Music'))k.style.display=D.music?'':'none';});
   entrance.style.display='flex';hud.style.display='none';pauseVeil.classList.remove('open');closeSheets();
   setTimeout(()=>{
     try{
@@ -2820,7 +2789,7 @@ function open(design,opts){
 function close(){
   running=false;touchWalking=false;
   hud.style.display='none';closeSheets();pauseVeil.classList.remove('open');
-  controls.unlock();bgm.pause();
+  controls.unlock();
   for(const k in keys)keys[k]=false;
   renderer.setAnimationLoop(null);
   viewer.style.display='none';
@@ -2877,14 +2846,14 @@ const LIGHT_ORDER=['bright','warm','daylight','cool','dim','dusk','dark'];
 const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 const MEDIA=['Watercolour','Ink & pen','Collage','Embroidery','Ceramics','Photography','Mixed media','Linocut','Charcoal','Textile'];
 
-/* ---------- the starting layout: five rooms ---------- */
+/* ---------- the starting gallery: The Dack Gallery ---------- */
 let phN=0;
 function placeholder(i,label=false){
   phN++;
   return {id:uid('a'),title:`Placeholder ${ROMAN[i%12]}`,author:MEDIA[(phN*3)%MEDIA.length]+' · space held',
     text:'',type:'image',label,aspect:i%3===1?1.35:+(.62+((phN*37)%17)/100).toFixed(2)};
 }
-const POEM='A placeholder poem\nfor the starting layout —\nspace held on this wall\nfor somebody’s words.\n\nWhen your gallery opens,\nwhat hangs here will have\na name, a hand, a reason.\nFor now: the room, the light,\nand you, walking.';
+const POEM='A placeholder poem\nfor the Dack Gallery —\nspace held on this wall\nfor somebody’s words.\n\nWhen your gallery opens,\nwhat hangs here will have\na name, a hand, a reason.\nFor now: the room, the light,\nand you, walking.';
 function template(){
   const R=o=>({id:uid('r'),shape:'rect',h:4.4,floor:'parquet',carpet:'#6b2a2a',wall:'#ffffff',light:'warm',accent:'#8a672c',
     artWalls:['N','E','S','W'],placard:true,statement:'',question:'',art:[],...o});
@@ -2907,10 +2876,9 @@ function template(){
     question:'What does a quiet room let you notice that a bright one doesn’t?',art:[0,1,2,3].map(i=>placeholder(i,i===0))});
   const face=WT+.012, it=(type,o)=>({id:uid('i'),type,rot:0,...o});
   return L.fix({
-    title:'The Five Rooms',est:'Gallery Builder · a starting layout',
-    subtitle:'Five rooms to walk, rearrange and make your own.',
-    intro:'Welcome. This gallery was laid out in Gallery Builder — five rooms, walked at your own pace.\n\nThe Long Gallery holds the main collection; the Rotunda turns it round under an oculus; the Sculpture Court has objects on plinths; the Quiet Room is the place to slow down. Numbers on the doors suggest a route, but there is no wrong order.\n\nEvery frame here is a placeholder. Swap them for real work in the designer, then export the gallery as a single web page to share it.',
-    music:true,
+    title:'The Dack Gallery',est:'Gallery Builder',
+    subtitle:'A fully editable, downloadable 3D gallery.',
+    intro:'Welcome to the Dack Gallery — a fully editable, downloadable 3D gallery, walked at your own pace.\n\nThe Long Gallery holds the main collection; the Rotunda turns it round under an oculus; the Sculpture Court has objects on plinths; the Quiet Room is the place to slow down. Numbers on the doors suggest a route, but there is no wrong order.\n\nEvery frame here is a placeholder, and nothing is fixed. In Gallery Builder you can add or remove rooms, move walls, change floors and light, and hang your own work — then download the whole gallery as a single web page to share.',
     rooms:[A,B,C,E,Q],
     doors:[
       {id:uid('d'),room:A.id,side:'W',at:157,w:2.4,labelIn:'Way out'},
@@ -2943,7 +2911,7 @@ function template(){
       it('wallsign',{variant:'text',x:134+face,z:146,rot:90,w:1.8,title:'Take your time',text:'A quieter room. Dim light, soft carpet — stay as long as you like.',color:'#4f3050'})
     ]});
 }
-function blankDesign(){return L.fix({title:'My Gallery',est:'A walkable gallery',subtitle:'',intro:'',music:true,rooms:[],doors:[],walls:[],items:[]});}
+function blankDesign(){return L.fix({title:'My Gallery',est:'A walkable gallery',subtitle:'',intro:'',rooms:[],doors:[],walls:[],items:[]});}
 
 /* =====================================================================
    STATE, HISTORY, SAVING
@@ -3974,8 +3942,6 @@ function galleryPanel(){
       ui.f('Small line above the name',ui.text(D,'est',{ph:'e.g. University of Bristol · Spring show'})),
       ui.f('Subtitle',ui.text(D,'subtitle',{area:true,rows:2,ph:'One or two lines under the name'})),
       ui.f('Welcome text',ui.text(D,'intro',{area:true,rows:5,ph:'Shown when visitors read the welcome lectern'}),'Visitors read this at the welcome lectern (add one with the Lectern tool).')),
-    ui.sec('Sound',ui.check('Background music',D.music,v=>{D.music=v;commit();}),
-      el('div',{class:'help',style:'margin-top:-2px'},'“Mesmerize” by Kevin MacLeod (incompetech.com), CC BY 4.0. Visitors can switch it off.')),
     ui.sec('At a glance',el('div',{class:'stats'},
       el('div',{},el('b',{},String(D.rooms.length)),el('span',{},'rooms')),
       el('div',{},el('b',{},String(works)),el('span',{},'works')),
@@ -4261,25 +4227,16 @@ $('openFile').onchange=async()=>{
 function openExport(){
   if(!D.rooms.length){toast('Draw a room first — there’s nothing to export yet.');return;}
   $('exName').value=slug(D.title)+'.html';
-  $('exMusicRow').style.display=D.music?'':'none';$('exMusicHelp').style.display=D.music?'':'none';
   $('exStatus').textContent='';
   const warn=checks().filter(c=>c.lvl==='warn');
   if(warn.length)$('exStatus').textContent=`Heads up: the design check has ${warn.length} thing${warn.length>1?'s':''} to look at — you can still export.`;
   openModal('exportDlg');
 }
-const blobToDataURL=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b);});
 async function exportHTML(){
   const btn=$('exGo');btn.disabled=true;
   const st=$('exStatus');st.textContent='Packaging…';
   try{
-    let tpl=$('viewerTpl').innerHTML;
-    if(D.music&&$('exMusic').checked){
-      st.textContent='Fetching the music…';
-      const resp=await fetch('mesmerize-kevin-macleod.mp3');
-      if(!resp.ok)throw new Error('music');
-      const data=await blobToDataURL(await resp.blob());
-      tpl=tpl.replace('src="mesmerize-kevin-macleod.mp3"',`src="${data}"`);
-    }
+    const tpl=$('viewerTpl').innerHTML;
     const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const json=JSON.stringify(D).replace(/</g,'\\u003c');
     const html=`<!DOCTYPE html>
@@ -4308,7 +4265,7 @@ GalleryEngine.open(JSON.parse(document.getElementById('gallery-design').textCont
     download(new Blob([html],{type:'text/html'}),/\.html?$/i.test(name)?name:name+'.html');
     st.textContent=`Downloaded (${(html.length/1048576).toFixed(1)} MB). Open it in a browser to walk through your gallery.`;
   }catch(e){
-    st.textContent=e.message==='music'?'The music file couldn’t be fetched (this works when the builder is served from a website). Untick the music box, or try again.':'Sorry — the export failed: '+e.message;
+    st.textContent='Sorry — the export failed: '+e.message;
   }
   btn.disabled=false;
 }
@@ -4331,7 +4288,7 @@ document.querySelectorAll('.b-modal').forEach(m=>{
 });
 document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>{
   const a=b.dataset.start;
-  if(a==='new5'){closeModals();loadDesign(template(),'Five rooms, ready to make your own');}
+  if(a==='new5'){closeModals();loadDesign(template(),'The Dack Gallery — change anything you like');}
   if(a==='blank'){closeModals();loadDesign(blankDesign(),'A blank site — choose the Room tool (R) and drag to draw');setTool('room');}
   if(a==='open')openFile();
 });
@@ -4341,7 +4298,7 @@ addEventListener('click',()=>fileMenu.classList.remove('open'));
 fileMenu.querySelectorAll('button').forEach(b=>b.onclick=()=>{
   fileMenu.classList.remove('open');
   const a=b.dataset.act;
-  if(a==='new5')loadDesign(template(),'Started again from the five-room layout');
+  if(a==='new5')loadDesign(template(),'Started again from the Dack Gallery');
   if(a==='blank'){loadDesign(blankDesign(),'A blank site — choose the Room tool (R) and drag to draw');setTool('room');}
   if(a==='open')openFile();
   if(a==='save')saveFile();
