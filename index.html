@@ -36,6 +36,7 @@
   #viewer .ghostBtn:hover{border-color:var(--brass);color:var(--brass-lit)}
   #viewer #keys{margin-top:32px;padding-top:22px;border-top:1px solid var(--hair);
     display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-size:12.5px;color:rgba(232,221,201,.5)}
+  #viewer #credit{margin-top:18px;font-size:11px;letter-spacing:.06em;color:rgba(232,221,201,.4)}
   #viewer #keys b{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--plaster);font-weight:600;
     background:rgba(232,221,201,.1);padding:2px 7px;margin-right:6px;font-size:11px}
 
@@ -340,6 +341,7 @@
   .how{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px;padding-top:18px;border-top:1px solid var(--b-line)}
   .how div{font-size:13px;line-height:1.5;color:#4b3d2e}
   .how b{display:block;color:var(--b-brass);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px}
+  .credit{margin:18px 0 0;font-size:12px;color:var(--b-faint);text-align:center;letter-spacing:.02em}
   .keys{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:7px 14px;font-size:13.5px;align-items:center}
   .keys kbd{font:600 12px ui-monospace,Menlo,Consolas,monospace;background:#f1e8d8;border:1px solid var(--b-line2);
     border-bottom-width:2px;border-radius:6px;padding:2px 7px;justify-self:start;white-space:nowrap}
@@ -441,6 +443,7 @@
       <div><b>2 · Dress</b>Pick floors, carpets, wall colours and light; hang your own pictures; put up signs.</div>
       <div><b>3 · Walk &amp; share</b>Press <i>Walk through</i> to try it in 3D, then <i>Export HTML</i> to share it.</div>
     </div>
+    <p class="credit">Gallery Builder · designed and built by Paul Hendrie</p>
   </div>
 </div>
 
@@ -487,6 +490,7 @@
       <div><b>Pictures</b>Each room hangs its artworks around its walls automatically — the gold ticks on the plan show where. Upload your own images in the room’s panel.</div>
       <div><b>Walking</b>Mouse to look, W A S D to walk, E to open a work, M for the map, Esc to pause. On a phone, left thumb walks and right thumb looks.</div>
     </div>
+    <p class="credit">Gallery Builder · designed and built by Paul Hendrie</p>
   </div>
 </div>
 
@@ -506,6 +510,7 @@
       <div><b>Mouse</b>Look</div><div><b>W A S D</b>Walk</div><div><b>Shift</b>Stride</div>
       <div><b>E</b>View exhibit</div><div><b>M</b>Gallery map</div><div><b>Esc</b>Release cursor</div>
     </div>
+    <div id="credit">Made with Gallery Builder · designed and built by Paul Hendrie</div>
   </div>
 </div>
 
@@ -3945,7 +3950,8 @@ function galleryPanel(){
     ui.sec('At a glance',el('div',{class:'stats'},
       el('div',{},el('b',{},String(D.rooms.length)),el('span',{},'rooms')),
       el('div',{},el('b',{},String(works)),el('span',{},'works')),
-      el('div',{},el('b',{},fmt(Math.round(area))),el('span',{},'m² of floor'))))
+      el('div',{},el('b',{},fmt(Math.round(area))),el('span',{},'m² of floor'))),
+      el('p',{class:'credit'},'Gallery Builder · designed and built by Paul Hendrie'))
   ];
 }
 function focusOn([k,id]){

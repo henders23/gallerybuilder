@@ -7,6 +7,8 @@ Gallery Builder is a rebuild of the
 three.js renderer, materials, lighting, walking and visitor sheets, and adds a design layer in front of it,
 so anyone can lay out their own gallery.
 
+Designed and built by Paul Hendrie.
+
 ## Files
 
 | File | What it is |
