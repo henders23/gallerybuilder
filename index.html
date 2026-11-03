@@ -241,7 +241,10 @@
 
   /* ---- inspector ---- */
   #insp{grid-row:2;overflow-y:auto;background:var(--b-panel);border-left:1px solid var(--b-line);padding:0 0 40px}
-  .ins-head{position:sticky;top:0;z-index:2;background:var(--b-panel);padding:16px 18px 12px;border-bottom:1px solid var(--b-line)}
+  .addBar{position:sticky;top:0;z-index:3;padding:12px 18px;background:var(--b-panel);border-bottom:1px solid var(--b-line)}
+  .addBar button{width:100%;padding:12px;font-size:14.5px;border-radius:10px;gap:8px}
+  .addBar button svg{width:18px;height:18px}
+  .ins-head{position:sticky;top:67px;z-index:2;background:var(--b-panel);padding:16px 18px 12px;border-bottom:1px solid var(--b-line)}
   .ins-kicker{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--b-brass);font-weight:600}
   .ins-title{font-family:var(--b-serif);font-size:21px;margin-top:3px;line-height:1.2}
   .ins-sub{font-size:12.5px;color:var(--b-mute);margin-top:4px;line-height:1.4}
@@ -325,6 +328,10 @@
   .b-modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:20px;
     background:rgba(30,20,10,.55);backdrop-filter:blur(3px)}
   .b-modal.open{display:flex}
+  .b-modal *{box-sizing:border-box}
+  .b-modal button,.b-modal input,.b-modal textarea,.b-modal select{font-family:inherit;font-size:14px;color:var(--b-ink)}
+  .b-modal .b-close{font-size:26px;color:var(--b-faint)}
+  .b-modal .b-close:hover{color:var(--b-ink)}
   .b-card{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--b-panel);border-radius:16px;
     box-shadow:0 24px 70px rgba(0,0,0,.35);padding:30px 32px;position:relative}
   .b-card.narrow{width:min(520px,100%)}
@@ -341,6 +348,15 @@
   .how{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px;padding-top:18px;border-top:1px solid var(--b-line)}
   .how div{font-size:13px;line-height:1.5;color:#4b3d2e}
   .how b{display:block;color:var(--b-brass);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px}
+  .drop{display:flex;align-items:center;gap:12px;padding:12px;border:1.5px dashed var(--b-line2);border-radius:10px;
+    background:#fffdf8;cursor:pointer;transition:.12s}
+  .drop:hover,.drop.over{border-color:var(--b-brass2);background:#fff8ea}
+  .drop .th{width:64px;height:64px;flex:none;border-radius:8px;background:#efe6d6 center/cover no-repeat;display:flex;
+    align-items:center;justify-content:center;color:#a08a5f;font-size:22px}
+  .drop b{display:block;font-size:13.5px}
+  .drop span{font-size:12.5px;color:var(--b-mute)}
+  .fitNote{font-size:12.5px;line-height:1.45;padding:9px 11px;border-radius:9px;margin:4px 0 14px;background:#eef5ee;color:#2f6a3e}
+  .fitNote.warn{background:#fbe3d8;color:#9a3a22}
   .credit{margin:18px 0 0;font-size:12px;color:var(--b-faint);text-align:center;letter-spacing:.02em}
   .keys{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:7px 14px;font-size:13.5px;align-items:center}
   .keys kbd{font:600 12px ui-monospace,Menlo,Consolas,monospace;background:#f1e8d8;border:1px solid var(--b-line2);
@@ -464,6 +480,10 @@
   </div>
 </div>
 
+<!-- add an exhibit (filled in by the designer script) -->
+<div class="b-modal" id="addDlg"><div class="b-card narrow" id="addCard"></div></div>
+<input type="file" id="exFile" accept="image/*" hidden>
+
 <!-- help -->
 <div class="b-modal" id="helpDlg">
   <div class="b-card">
@@ -568,7 +588,7 @@
   <button class="closeX" data-close>&times;</button>
   <div class="kicker">Add a work</div>
   <h2>Hang something on the wall</h2>
-  <div class="byline">Try a piece in place — additions last for this visit only.</div>
+  <div class="byline" id="upBy">Try a piece in place — additions last for this visit only.</div>
   <div class="two">
     <div class="field"><label for="uName">Your name</label><input id="uName" placeholder="e.g. A. Okonkwo"></div>
     <div class="field"><label for="uWing">Which room</label><select id="uWing"></select></div>
@@ -583,7 +603,7 @@
   </div>
   <div class="field" id="textField" style="display:none"><label for="uText">The writing itself</label><textarea id="uText" style="min-height:180px" placeholder="Paste your poem, reflection or letter here. Line breaks are kept."></textarea></div>
   <button class="submit" id="uSubmit">Hang it on the wall</button>
-  <div class="note">Your piece is added for this visit only, so you can see exactly where it lands.</div>
+  <div class="note" id="upNote">Your piece is added for this visit only, so you can see exactly where it lands.</div>
 </div></div>
 </div></template>
 
@@ -2552,7 +2572,7 @@ $('uSubmit').onclick=()=>{
     const img=new Image();img.onload=()=>{a.aspect=img.naturalWidth/img.naturalHeight;finish();};img.onerror=finish;img.src=a.url;
   } else finish();
   function finish(){
-    r.art.push(a);rebuild();closeSheets();
+    r.art.push(a);OPTS.onAddArt?.(r.id,{...a},file);rebuild();closeSheets();
     const d=exById(a.id);
     if(d&&exhibitObjs.some(o=>o.data.id===a.id))walkTo(d);
     else{resume();}
@@ -2775,6 +2795,9 @@ function open(design,opts){
   $('plSub').textContent=D.subtitle||'';
   $('plSub').style.display=D.subtitle?'':'none';
   $('mapTitle').textContent=D.title||'Gallery map';
+  $('upBy').textContent=OPTS.builder?'Hang a piece and it’s added to your design.':'Try a piece in place — additions last for this visit only.';
+  $('upNote').textContent=OPTS.builder?'It’s saved into your design, so it will still be there when you go back to the plan.'
+    :'Your piece is added for this visit only, so you can see exactly where it lands.';
   if(OPTS.standalone)document.title=D.title||'Gallery';
   entrance.style.display='flex';hud.style.display='none';pauseVeil.classList.remove('open');closeSheets();
   setTimeout(()=>{
@@ -2921,7 +2944,7 @@ function blankDesign(){return L.fix({title:'My Gallery',est:'A walkable gallery'
 /* =====================================================================
    STATE, HISTORY, SAVING
    ===================================================================== */
-let D=null, LY=null, sel=null, tool='select', walking=false, openArt=null;
+let D=null, LY=null, sel=null, tool='select', walking=false, openArt=null, flash=null;
 const view={s:12,ox:0,oy:0};
 const relayout=()=>{LY=L.layout(D);};
 const hist={stack:[],i:-1};
@@ -3175,6 +3198,12 @@ function artTicks(r){
     const len=Math.min(est,sl.art.aspect>=1?2.4:1.6);
     ctx.save();
     const [sx,sy]=S(sl.x,sl.z);ctx.translate(sx,sy);ctx.rotate(-sl.rot);
+    if(flash&&flash.id===sl.art.id&&performance.now()<flash.until){
+      const k=(Math.sin(performance.now()/140)+1)/2;
+      ctx.strokeStyle=`rgba(195,141,60,${.45+.5*k})`;ctx.lineWidth=3;
+      ctx.beginPath();ctx.arc(0,0,Math.max(14,(len/2+.6)*view.s),0,7);ctx.stroke();
+      requestAnimationFrame(draw);
+    }
     ctx.fillStyle=sl.art.img?'#b57f2a':'#d8a650';
     ctx.fillRect(-len/2*view.s,-Math.max(2,.07*view.s),len*view.s,Math.max(3,.16*view.s));
     if(sl.art.label){ctx.fillStyle='#efe2c2';ctx.strokeStyle='#b57f2a';ctx.lineWidth=1;
@@ -3918,6 +3947,8 @@ function renderInspector(){
   binds=[];
   const p=$('insp');const scroll=p.scrollTop;p.innerHTML='';
   const o=selObj();
+  p.append(el('div',{class:'addBar'},el('button',{type:'button',class:'btn prim',onclick:()=>openAddExhibit(),
+    html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add an exhibit'})));
   if(!o)p.append(...galleryPanel());
   else if(sel.k==='room')p.append(...roomPanel(o));
   else if(sel.k==='door')p.append(...doorPanel(o));
@@ -4078,6 +4109,113 @@ function shrinkImage(file){
   });
 }
 
+/* ---- "Add an exhibit": one dialog for pictures, writing and objects ---- */
+const NEW={roomId:null,kind:'image',title:'',author:'',text:'',label:true,file:null,preview:null};
+function defaultRoomId(){
+  const o=selObj();
+  if(o&&sel.k==='room')return o.id;
+  if(o&&sel.k==='item'){const r=L.roomAt(D,o.type==='rug'?o.x+o.w/2:o.x,o.type==='rug'?o.z+o.d/2:o.z);if(r)return r.id;}
+  if(NEW.roomId&&find('room',NEW.roomId))return NEW.roomId;
+  // otherwise the first room on the route with wall space to spare
+  const ordered=[...D.rooms].sort((a,b)=>(a.num||999)-(b.num||999));
+  return (ordered.find(r=>roomHasSpace(r.id,true))||ordered[0]).id;
+}
+function roomHasSpace(roomId,label){
+  const trial=JSON.parse(JSON.stringify(D)), tr=trial.rooms.find(x=>x.id===roomId);
+  tr.art.push({id:'trial',type:'image',label,aspect:.75});
+  return L.layout(trial).rooms.get(roomId).slots.some(sl=>sl.art.id==='trial');
+}
+function openAddExhibit(){
+  if(!D.rooms.length){toast('Draw a room first — exhibits hang on its walls. Choose the Room tool (R).');return;}
+  if(NEW.preview)URL.revokeObjectURL(NEW.preview);
+  Object.assign(NEW,{roomId:defaultRoomId(),kind:'image',title:'',author:'',text:'',label:true,file:null,preview:null});
+  renderAddCard();openModal('addDlg');
+  setTimeout(()=>$('addCard').querySelector('input[type=text]')?.focus(),50);
+}
+/* would one more work fit on this room's walls? */
+function fitNote(){
+  const r=find('room',NEW.roomId);if(!r)return null;
+  if(NEW.kind==='object')return el('div',{class:'fitNote'},`The plinth will be placed on a clear spot in ${r.name} — drag it wherever you like afterwards.`);
+  return roomHasSpace(r.id,NEW.label)?el('div',{class:'fitNote'},`✓ There’s room for it on the walls of ${r.name}.`)
+    :el('div',{class:'fitNote warn'},`${r.name}’s walls are full, so it won’t be hung yet. Choose another room, or make this one bigger after adding it.`);
+}
+function renderAddCard(){
+  const c=$('addCard');c.innerHTML='';
+  const rooms=[...D.rooms].sort((a,b)=>(a.num||999)-(b.num||999));
+  const roomSel=el('select',{},...rooms.map(r=>el('option',{value:r.id},(r.num?r.num+' · ':'')+(r.name||'Room'))));
+  roomSel.value=NEW.roomId;roomSel.onchange=()=>{NEW.roomId=roomSel.value;renderAddCard();};
+  const field=(label,key,opts={})=>{
+    const i=el(opts.area?'textarea':'input',{type:opts.area?undefined:'text',placeholder:opts.ph||'',rows:opts.rows});
+    i.value=NEW[key];i.oninput=()=>{NEW[key]=i.value;};
+    if(!opts.area)i.onkeydown=e=>{if(e.key==='Enter')submitExhibit();};
+    return ui.f(label,i,opts.help);
+  };
+  const isPic=NEW.kind==='image', isObj=NEW.kind==='object';
+  const drop=el('div',{class:'drop',tabindex:0,onclick:()=>{const f=$('exFile');f.value='';f.click();},
+      onkeydown:e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('exFile').click();}}},
+    el('div',{class:'th',style:NEW.preview?`background-image:url(${NEW.preview})`:''},NEW.preview?'':'▧'),
+    el('div',{},el('b',{},NEW.file?NEW.file.name:'Choose a picture…'),
+      el('span',{},NEW.file?'Click to choose a different one':'Or drop an image here. Leave it empty to hang a placeholder.')));
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('over');});
+  drop.addEventListener('dragleave',()=>drop.classList.remove('over'));
+  drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))setExFile(f);});
+  c.append(
+    el('button',{class:'b-close','data-close':'','aria-label':'Close'},'×'),
+    el('h2',{},'Add an exhibit'),
+    el('p',{class:'lead',style:'margin-bottom:16px'},'Choose a room and it hangs itself on a clear stretch of wall. You can change everything later in the room’s panel.'),
+    ui.f('What is it?',ui.seg([['image','Picture'],['text','Written piece'],['object','Object on a plinth']],NEW.kind,v=>{NEW.kind=v;renderAddCard();})),
+    ui.f('Which room',roomSel),
+    fitNote(),
+    isPic?ui.f('Picture',drop):null,
+    field('Title','title',{ph:isObj?'e.g. Bowl with blue glaze':isPic?'e.g. Evening, River Avon':'e.g. Letter to my first patient'}),
+    field(isObj?'Maker':'Artist or author','author',{ph:'e.g. A. Okonkwo · Watercolour'}),
+    field(NEW.kind==='text'?'The writing itself':'Story or description','text',{area:true,rows:NEW.kind==='text'?6:3,
+      ph:NEW.kind==='text'?'Line breaks are kept':'Shown when visitors press E to look closer'}),
+    !isObj?ui.check('Hang a label beside it (visitors can pin responses to it)',NEW.label,v=>{NEW.label=v;renderAddCard();}):null,
+    el('div',{class:'btns',style:'margin-top:6px'},el('button',{class:'btn','data-close':''},'Cancel'),
+      el('button',{class:'btn prim',onclick:submitExhibit},'Add exhibit')),
+    el('p',{class:'help',style:'margin-top:14px'},'Exhibits are saved inside this design, in this browser. To keep a copy or move it to another computer, use File → Save design file, or Export HTML.'));
+}
+function setExFile(f){
+  if(NEW.preview)URL.revokeObjectURL(NEW.preview);
+  NEW.file=f;NEW.preview=URL.createObjectURL(f);
+  if(!NEW.title)NEW.title=f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ');
+  renderAddCard();
+}
+$('exFile').onchange=()=>{const f=$('exFile').files[0];if(f)setExFile(f);};
+/* a clear spot on the floor for a new plinth */
+function freeSpot(r){
+  const cx=r.x+r.w/2, cz=r.z+r.d/2, taken=(x,z)=>D.items.some(it=>it.type!=='rug'&&it.type!=='wallsign'&&Math.hypot(it.x-x,it.z-z)<1.6)
+    ||D.walls.some(w=>distSeg(x,z,w.x1,w.z1,w.x2,w.z2)<1.2);
+  for(let rr=0;rr<Math.max(r.w,r.d);rr+=.5)for(let k=0;k<(rr?16:1);k++){
+    const a=k/16*Math.PI*2, x=snapI(cx+Math.cos(a)*rr), z=snapI(cz+Math.sin(a)*rr);
+    if(L.inRoom(r,x,z,1.6)&&!taken(x,z))return [x,z];
+  }
+  return [snapI(cx),snapI(cz)];
+}
+async function submitExhibit(){
+  const r=find('room',NEW.roomId);if(!r)return;
+  const title=NEW.title.trim()||(NEW.kind==='object'?'An object':'Untitled');
+  if(NEW.kind==='object'){
+    const [x,z]=freeSpot(r);
+    const it=L.fix({rooms:[],doors:[],walls:[],items:[{id:uid('i'),type:'plinth',x,z,rot:0,title,author:NEW.author.trim(),text:NEW.text}]}).items[0];
+    D.items.push(it);relayout();commit();closeModals();
+    select('item',it.id);focusOn(['item',it.id]);
+    toast(`Added “${title}” on a plinth in ${r.name}`,true);return;
+  }
+  const art={id:uid('a'),title,author:NEW.author.trim(),text:NEW.text,type:NEW.kind==='text'?'text':'image',label:NEW.label};
+  if(NEW.kind==='image'&&NEW.file){
+    try{Object.assign(art,await shrinkImage(NEW.file));}
+    catch(e){toast('That file couldn’t be read as a picture — try a JPEG or PNG.');return;}
+  }else if(NEW.kind==='image')art.aspect=.75;
+  r.art.push(art);relayout();commit();closeModals();
+  sel={k:'room',id:r.id};openArt=art.id;renderInspector();focusOn(['room',r.id]);
+  if(narrow())$('insp').classList.add('show');
+  const hung=LY.rooms.get(r.id).slots.some(sl=>sl.art.id===art.id);
+  flash={id:art.id,until:performance.now()+4000};draw();
+  toast(hung?`Added “${title}” to ${r.name} — it’s flashing on the plan`:`Added “${title}” to ${r.name}, but its walls are full, so it isn’t hung yet`,true);
+}
+
 /* ---- a doorway ---- */
 function doorPanel(d){
   const g=LY.G.find(q=>q.id===d.id), r=find('room',d.room);
@@ -4201,7 +4339,25 @@ function walk(startAt){
   if(!D.rooms.length){toast('Draw a room first — choose the Room tool (R).');return;}
   if(!window.GalleryEngine){toast('The 3D engine hasn’t loaded. It needs an internet connection — check yours and reload the page.');return;}
   walking=true;
-  window.GalleryEngine.open(D,{builder:true,startAt,onClose:()=>{walking=false;draw();}});
+  const notes=[];
+  window.GalleryEngine.open(D,{builder:true,startAt,
+    onAddArt:(roomId,a,file)=>{notes.push(saveWalkArt(roomId,a,file));},
+    onClose:async()=>{
+      walking=false;draw();
+      const done=await Promise.all(notes);
+      if(done.length){const n=done.length;toast(`${n} work${n>1?'s':''} you added while walking ${n>1?'are':'is'} now in your design.${done.some(d=>d==='placeholder')?' PDFs and videos are kept as placeholders — add their pictures here.':''}`,true);}
+    }});
+}
+/* a work hung from the walk-through's "Add work" sheet joins the design */
+async function saveWalkArt(roomId,a,file){
+  const r=find('room',roomId);if(!r)return 'gone';
+  const art={id:a.id,title:a.title,author:a.author==='Anonymous'?'':a.author,text:a.text||'',
+    type:a.type==='text'?'text':'image',label:true};
+  let kept='ok';
+  if(a.kind==='image'&&file){try{Object.assign(art,await shrinkImage(file));}catch(e){kept='placeholder';}}
+  else if(a.kind==='pdf'||a.kind==='video')kept='placeholder';
+  r.art.push(art);relayout();commit();renderInspector();draw();
+  return kept;
 }
 const slug=s=>(String(s||'gallery').toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g,'').trim().replace(/[\s_]+/g,'-').replace(/-+/g,'-').slice(0,60))||'gallery';
 function download(blob,name){

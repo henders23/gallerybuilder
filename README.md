@@ -31,8 +31,10 @@ It's a static site with no build step. Serve the folder with any static host (Ve
 - **Walls and doorways.** Rooms that touch share a wall. A new room drawn against another one gets a doorway
   automatically. You can also open or close doorways with the Doorway tool, and draw free-standing walls,
   either full height or low.
-- **Pictures.** Upload your own images, or use placeholders. They hang themselves around the walls, clear of
-  doorways and signs, and gold ticks on the plan show where each one lands.
+- **Exhibits.** The **Add an exhibit** button at the top of the right-hand panel adds a picture, a written
+  piece or an object on a plinth to any room. Pictures and writing hang themselves around the walls, clear of
+  doorways and signs, and gold ticks on the plan show where each one lands. You can also upload several
+  pictures at once from a room's panel, or use placeholders.
 - **Signs.** Wall signs come as a text panel, a banner with an arrow, the gallery title, a floor plan, or a
   visitors' wall. There are also standing signs, and every doorway gets a sign above it that you can
   reword.
@@ -41,7 +43,20 @@ It's a static site with no build step. Serve the folder with any static host (Ve
 - **Undo and redo, autosave, and a design check.** The design check flags overlapping rooms, rooms nobody
   can reach, and pictures that don't fit on the walls.
 
-Your work saves in the browser as you go. **File → Save design file** downloads it as `.json`.
+## Where your work is stored
+
+Everything — rooms, signs, exhibits and the pictures you upload — lives in a single design. Nothing is uploaded
+to a server: the Vercel site only serves the app.
+
+- **In your browser.** The design saves itself to this browser's local storage as you go, so it's there when
+  you come back on the same computer and browser. Pictures are shrunk to at most 1600 px and stored inside the
+  design. Browsers allow only a few megabytes here, so a design with many pictures may be too big to autosave;
+  the top bar says so when that happens.
+- **In a file.** **File → Save design file** downloads the design as `.json`, and **Export HTML** downloads the
+  walkable gallery with the design inside it. Either one can be opened again with **File → Open**, on any
+  computer. These files are the only way to keep a copy or move a design elsewhere.
+- **Works added while walking.** In Walk-through mode, the **Add work** sheet saves into your design too.
+  In an exported gallery, a visitor's additions last only for their visit.
 
 ## Export
 
