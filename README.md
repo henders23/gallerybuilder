@@ -26,7 +26,8 @@ It's a static site with no build step. Serve the folder with any static host (Ve
 
 - **Start screen.** Start from **The Dack Gallery**, a fully editable, downloadable 3D gallery (an entrance
   hall, a long gallery, a rotunda, a sculpture court and a quiet room, all of which can be changed or added
-  to), start from a blank site, or open a saved design. The site is 300 × 300 m.
+  to), start from a blank site, or open a saved design. The site is 300 × 300 m. The start screen opens every
+  time the app does, with a **Continue** button for the design saved in this browser.
 - **Rooms.** Draw square or round rooms, drag them into place and resize them with the handles. Each room
   has its own name and route number, ceiling height, floor (oak parquet, flagstone, marble, concrete, or
   carpet in eight colours), wall colour, lighting mood, accent colour and placard text.
@@ -34,9 +35,12 @@ It's a static site with no build step. Serve the folder with any static host (Ve
   automatically. You can also open or close doorways with the Doorway tool, and draw free-standing walls,
   either full height or low.
 - **Exhibits.** The **Add an exhibit** button at the top of the right-hand panel adds a picture, a written
-  piece or an object on a plinth to any room. Pictures and writing hang themselves around the walls, clear of
-  doorways and signs, and gold ticks on the plan show where each one lands. You can also upload several
-  pictures at once from a room's panel, or use placeholders.
+  piece or an object on a plinth. Describe it, then click the spot on a wall (or, for a plinth, the floor)
+  where it should go — or let it hang itself in a room you choose. Works on the walls show as gold ticks on
+  the plan: drag one to move it to any room wall, round-room drum or full-height free-standing wall. Pinned
+  works stay put and the others arrange themselves around them, clear of doorways and signs. The
+  **All exhibits** tab lists every work room by room, with search, so you can edit titles, text and pictures
+  in one place.
 - **Signs.** Wall signs come as a text panel, a banner with an arrow, the gallery title, a floor plan, or a
   visitors' wall. There are also standing signs, and every doorway gets a sign above it that you can
   reword.

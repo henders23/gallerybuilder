@@ -248,9 +248,19 @@
   /* ---- inspector ---- */
   #insp{grid-row:2;overflow-y:auto;background:var(--b-panel);border-left:1px solid var(--b-line);padding:0 0 40px}
   .addBar{position:sticky;top:0;z-index:3;padding:12px 18px;background:var(--b-panel);border-bottom:1px solid var(--b-line)}
-  .addBar button{width:100%;padding:12px;font-size:14.5px;border-radius:10px;gap:8px}
-  .addBar button svg{width:18px;height:18px}
-  .ins-head{position:sticky;top:67px;z-index:2;background:var(--b-panel);padding:16px 18px 12px;border-bottom:1px solid var(--b-line)}
+  .addBar>button{width:100%;padding:12px;font-size:14.5px;border-radius:10px;gap:8px}
+  .addBar>button svg{width:18px;height:18px}
+  .tabs{display:flex;gap:4px;margin-top:10px;padding:3px;background:#f3ecdf;border-radius:9px}
+  .tabs button{flex:1;padding:7px 8px;border:none;background:none;border-radius:7px;cursor:pointer;font-size:13px;color:var(--b-mute)}
+  .tabs button:hover{color:var(--b-ink)}
+  .tabs button.on{background:#fff;color:var(--b-ink);font-weight:600;box-shadow:0 1px 3px rgba(40,25,10,.15)}
+  .exRoom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 7px;font-size:11px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--b-mute);font-weight:600}
+  .exRoom:first-child{margin-top:0}
+  .exRoom button{border:none;background:none;color:var(--b-blue);cursor:pointer;font-size:11.5px;letter-spacing:0;text-transform:none;padding:0}
+  .pill.pin{background:#f6ead2;color:#6b4614}
+  .pill.none{background:#fbe3d8;color:#9a3a22}
+  .ins-head{position:sticky;top:var(--ab,67px);z-index:2;background:var(--b-panel);padding:16px 18px 12px;border-bottom:1px solid var(--b-line)}
   .ins-kicker{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--b-brass);font-weight:600}
   .ins-title{font-family:var(--b-serif);font-size:21px;margin-top:3px;line-height:1.2}
   .ins-sub{font-size:12.5px;color:var(--b-mute);margin-top:4px;line-height:1.4}
@@ -353,6 +363,12 @@
     background:#fdf3e1;border:1px solid #ecd2a2;color:#6b4614;font-size:13.5px;line-height:1.45}
   .trial b{flex:none;padding:2px 8px;border-radius:20px;background:#c38d3c;color:#fff;font-size:11px;
     letter-spacing:.08em;text-transform:uppercase}
+  .contBar{display:none;width:100%;margin:0 0 14px;padding:14px 18px;border:none;border-radius:12px;cursor:pointer;
+    background:var(--b-brass2);color:#1d140b;text-align:left;font-size:15px;transition:.12s}
+  .contBar:hover{background:#d39d4b}
+  .contBar b{display:block;font-size:16px;margin-bottom:2px}
+  .contBar span{font-size:13px;opacity:.8}
+  .contBar.show{display:block}
   .choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .choice{text-align:left;padding:16px;border:1px solid var(--b-line2);border-radius:12px;background:#fff;cursor:pointer;transition:.12s}
   .choice:hover{border-color:var(--b-brass2);box-shadow:0 6px 18px rgba(120,80,20,.12);transform:translateY(-1px)}
@@ -464,6 +480,7 @@
     <p class="lead">Lay out rooms and walls on the plan, open doorways, lay carpets and put up signs — then
       walk through it in 3D and export it as a single web page you can share.</p>
     <p class="trial" role="note"><b>Trial</b><span>This is a trial version, for experimentation purposes only.</span></p>
+    <button class="contBar" id="contBar" data-start="continue"><b>Continue where you left off →</b><span id="contInfo"></span></button>
     <div class="choices">
       <button class="choice" data-start="new5">
         <svg viewBox="0 0 160 84"><g fill="#e4cfa9" stroke="#3b2a1d" stroke-width="2"><rect x="18" y="38" width="28" height="22"/><rect x="46" y="38" width="44" height="22"/><rect x="46" y="14" width="28" height="24"/><rect x="74" y="12" width="40" height="25"/></g><ellipse cx="102" cy="49" rx="12" ry="12" fill="#e4cfa9" stroke="#3b2a1d" stroke-width="2"/><g fill="#c38d3c"><rect x="44" y="45" width="4" height="7"/><rect x="88" y="45" width="4" height="7"/><rect x="56" y="36" width="7" height="4"/></g></svg>
@@ -792,6 +809,33 @@ function rectLayout(D,r,G){
       cuts[s.side].push([u-hw-.45,u+hw+.45]);
     }
   }
+  // works pinned to a spot by hand: keep them there, never in a doorway, and
+  // keep the automatic works (and the placard) clear of them
+  const pinned=[], auto=[], onWalls=[], slots=[];
+  for(const art of (r.art||[])){
+    const p=art.pin;
+    if(p&&p.side&&S.some(s=>s.side===p.side)&&Number.isFinite(p.u))pinned.push(art);
+    else if(p&&p.wall&&hangWall(D,p.wall))onWalls.push(art);
+    else auto.push(art);
+  }
+  const ps=pinned.map(art=>{
+    const s=S.find(q=>q.side===art.pin.side);
+    let u=clamp(art.pin.u,s.a+.7,s.b-.7);
+    for(const g of gaps[s.side])if(u>g[0]-.7&&u<g[1]+.7)u=u<(g[0]+g[1])/2?g[0]-.7:g[1]+.7;
+    return {art,s,u:clamp(u,s.a+.7,s.b-.7)};
+  });
+  for(const p of ps){
+    let lo=p.s.a, hi=p.s.b;
+    for(const g of gaps[p.s.side]){if(g[1]<=p.u)lo=Math.max(lo,g[1]);else if(g[0]>=p.u)hi=Math.min(hi,g[0]);}
+    for(const it of signsOn(D,r,p.s)){const u=p.s.axis==='x'?it.x:it.z,hw=signW(it)/2;
+      if(u+hw<=p.u)lo=Math.max(lo,u+hw);else if(u-hw>=p.u)hi=Math.min(hi,u-hw);}
+    for(const o of ps)if(o!==p&&o.s===p.s){const m=(o.u+p.u)/2;if(o.u<p.u)lo=Math.max(lo,m);else if(o.u>p.u)hi=Math.min(hi,m);}
+    const maxW=clamp(2*Math.min(p.u-lo,hi-p.u)-.2,1,3.4);
+    slots.push({art:p.art,...ptOn(p.s,p.u,WT+.02),rot:rotOf(p.s.n),maxW,side:p.s.side,u:p.u,pinned:true});
+    const w=Math.min(2.4,Math.max(.8,maxW-(p.art.label?1.75:.4))), extra=p.art.label?1.8:0;
+    cuts[p.s.side].push([p.u-w/2-.5-extra,p.u+w/2+.5+extra]);
+  }
+  slots.push(...wallPinSlots(D,onWalls));
   let placard=null;
   if(r.placard!==false){
     const cands=[];
@@ -816,12 +860,11 @@ function rectLayout(D,r,G){
     for(const [a,b] of freeSegs(s.a+1.0,s.b-1.0,cuts[s.side]))if(b-a>.9)segs.push({s,a,b,items:[]});
   }
   let overflow=0;
-  for(const art of (r.art||[])){
+  for(const art of auto){
     segs.sort((p,q)=>(q.b-q.a)/(q.items.length+1)-(p.b-p.a)/(p.items.length+1));
     const sg=segs[0], need=art.label?2.9:1.5;
     if(sg&&(sg.b-sg.a)/(sg.items.length+1)>=need)sg.items.push(art);else overflow++;
   }
-  const slots=[];
   for(const sg of segs){
     const n=sg.items.length;if(!n)continue;
     const step=(sg.b-sg.a)/(n+1), run=n>1?step:step*1.6;
@@ -861,14 +904,36 @@ function roundLayout(D,r,G){
   }
   const per=Math.PI*(3*(rx+rz)-Math.sqrt((3*rx+rz)*(rx+3*rz)));
   const N=Math.max(4,Math.floor(per/2.4));
+  const pinned=[], auto=[], onWalls=[], slots=[];
+  for(const art of (r.art||[])){
+    const p=art.pin;
+    if(p&&Number.isFinite(p.ang))pinned.push(art);
+    else if(p&&p.wall&&hangWall(D,p.wall))onWalls.push(art);
+    else auto.push(art);
+  }
+  const pins=pinned.map(art=>{
+    let u=art.pin.ang;
+    for(const d of doors){const diff=((u-d.u)%(2*Math.PI)+3*Math.PI)%(2*Math.PI)-Math.PI, need=d.hw+.9/Rm;
+      if(Math.abs(diff)<need)u=d.u+(diff<0?-1:1)*need;}
+    return {art,u};
+  });
+  for(const p of pins){
+    let near=Math.PI;
+    for(const o of pins)if(o!==p)near=Math.min(near,angDist(o.u,p.u)/2);
+    for(const d of doors)near=Math.min(near,angDist(d.u,p.u)-d.hw);
+    const px=cx+(rx-.14)*Math.cos(p.u), pz=cz+(rz-.14)*Math.sin(p.u);
+    slots.push({art:p.art,x:px,z:pz,rot:Math.atan2(cx-px,cz-pz),maxW:clamp(near*Rm*2-.4,1,2.2),u:p.u,pinned:true});
+  }
+  slots.push(...wallPinSlots(D,onWalls));
   const cand=[];
   for(let i=0;i<N;i++){
     const u=-Math.PI/2+(i+.5)/N*2*Math.PI;
     if(doors.some(d=>angDist(u,d.u)<d.hw+1.25/Rm))continue;
     if(signs.some(s=>angDist(u,s.u)<s.hw))continue;
+    if(pins.some(p=>angDist(u,p.u)<1.6/Rm))continue;
     cand.push(u);
   }
-  const items=r.art||[], slots=[];
+  const items=auto;
   const n=Math.min(items.length,cand.length);
   const spacing=per/N;
   for(let i=0;i<n;i++){
@@ -877,6 +942,22 @@ function roundLayout(D,r,G){
     slots.push({art:items[i],x:px,z:pz,rot:Math.atan2(cx-px,cz-pz),maxW:Math.min(2.2,spacing*(cand.length/n)-.5),u});
   }
   return {slots,placard,overflow:items.length-n,doors,capacity:cand.length,cx,cz,rx,rz};
+}
+
+/* a free-standing wall that can take a picture (low ones are too short) */
+const hangWall=(D,id)=>{const w=D.walls.find(q=>q.id===id);return w&&w.h!=='low'&&Math.hypot(w.x2-w.x1,w.z2-w.z1)>=1.2?w:null;};
+function wallPinSlots(D,arts){
+  const out=[];
+  for(const art of arts){
+    const w=hangWall(D,art.pin.wall), dx=w.x2-w.x1, dz=w.z2-w.z1, Ln=Math.hypot(dx,dz);
+    const t=clamp(art.pin.t,.6/Ln,1-.6/Ln), face=art.pin.face<0?-1:1, nx=-dz/Ln*face, nz=dx/Ln*face;
+    let lo=0, hi=Ln;
+    for(const o of arts)if(o!==art&&o.pin.wall===art.pin.wall&&(o.pin.face<0?-1:1)===face){
+      const m=(o.pin.t+t)/2*Ln;if(o.pin.t<t)lo=Math.max(lo,m);else hi=Math.min(hi,m);}
+    out.push({art,x:w.x1+dx*t+nx*.12,z:w.z1+dz*t+nz*.12,rot:Math.atan2(nx,nz),
+      maxW:clamp(2*Math.min(t*Ln-lo,hi-t*Ln)-.2,1,3.4),wall:w.id,pinned:true});
+  }
+  return out;
 }
 
 function layout(D){
@@ -969,6 +1050,11 @@ function fix(D){
       a.label=!!a.label;
       if(a.img&&typeof a.img!=='string')a.img=null;
       if(a.aspect!==undefined)a.aspect=clamp(num(a.aspect,.75),.2,5);
+      const p=a.pin;
+      if(p&&typeof p==='object'&&'NESW'.includes(p.side)&&String(p.side).length===1&&Number.isFinite(+p.u))a.pin={side:p.side,u:+p.u};
+      else if(p&&typeof p==='object'&&p.ang!==null&&p.ang!==''&&Number.isFinite(+p.ang))a.pin={ang:+p.ang};
+      else if(p&&typeof p==='object'&&typeof p.wall==='string'&&Number.isFinite(+p.t))a.pin={wall:p.wall,t:clamp(+p.t,0,1),face:+p.face<0?-1:1};
+      else delete a.pin;
     }
   }
   const ids=new Set(D.rooms.map(r=>r.id));
@@ -3025,10 +3111,14 @@ function save(){
 }
 
 const find=(k,id)=>k==='room'?D.rooms.find(r=>r.id===id):k==='door'?D.doors.find(d=>d.id===id)
-  :k==='wall'?D.walls.find(w=>w.id===id):D.items.find(i=>i.id===id);
+  :k==='wall'?D.walls.find(w=>w.id===id):k==='art'?artHome(id)?.a:D.items.find(i=>i.id===id);
+/* the room an exhibit belongs to */
+function artHome(id){for(const r of D.rooms){const a=r.art.find(q=>q.id===id);if(a)return {r,a};}return null;}
+const slotOf=id=>{for(const info of LY.rooms.values()){const sl=info.slots.find(q=>q.art.id===id);if(sl)return sl;}return null;};
 const selObj=()=>sel&&find(sel.k,sel.id);
+let panelTab='edit', placing=null;
 function select(k,id){
-  sel=k?{k,id}:null;openArt=null;
+  sel=k?{k,id}:null;openArt=null;if(k)panelTab='edit';
   renderInspector();draw();
   if(sel&&narrow())$('insp').classList.add('show');
 }
@@ -3389,6 +3479,10 @@ function drawSelection(){
   }else if(sel.k==='item'){
     const [sx,sy]=S(o.x,o.z), r=Math.max(12,itemRadius(o)*view.s+6);
     ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(sx,sy,r,0,7);ctx.stroke();ctx.setLineDash([]);
+  }else if(sel.k==='art'){
+    const sl=slotOf(o.id);
+    if(sl){const [sx,sy]=S(sl.x,sl.z);ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(sx,sy,Math.max(14,1.2*view.s),0,7);ctx.stroke();ctx.setLineDash([]);
+      label(sl.pinned?'Drag to move it along the walls':'Drag to pin it to a spot',sx,sy-Math.max(26,1.2*view.s+14));}
   }else if(sel.k==='wall'){
     const [ax,ay]=S(o.x1,o.z1),[bx,by]=S(o.x2,o.z2);
     ctx.strokeStyle='rgba(195,141,60,.5)';ctx.lineWidth=Math.max(8,.2*view.s+8);ctx.lineCap='round';
@@ -3427,6 +3521,21 @@ function drawPreview(){
   }
   if(drag||!pointerW)return;
   const [wx,wz]=pointerW;
+  if(tool==='placeArt'&&placing){
+    const name=`“${placing.title}”`;
+    if(placing.kind==='object'){
+      const r=L.roomAt(D,wx,wz);
+      if(!r){label('Click on the floor of a room',...S(wx,wz),'#9a3a22');return;}
+      drawItem({type:'plinth',x:snapI(wx),z:snapI(wz),rot:0},.6);
+      label(`Place ${name} here in ${r.name}`,...S(wx,wz-1.4));return;
+    }
+    const pl=artPlacement(wx,wz);
+    if(pl.err){label(pl.err,...S(wx,wz),'#9a3a22');return;}
+    ctx.save();const [sx,sy]=S(pl.x,pl.z);ctx.translate(sx,sy);ctx.rotate(-pl.rot);
+    ctx.fillStyle='rgba(195,141,60,.85)';ctx.fillRect(-.8*view.s,-Math.max(3,.1*view.s),1.6*view.s,Math.max(6,.22*view.s));ctx.restore();
+    label(`Hang ${name} here in ${pl.room.name}`,sx,sy-24);
+    return;
+  }
   if(tool==='door'){
     const hd=pickDoor(wx,wz);
     if(hd){const [sx,sy]=S(hd.cx,hd.cz);label('Click to close this doorway',sx,sy-18,'#9a3a22');return;}
@@ -3478,9 +3587,20 @@ function pickDoor(x,z){
   }
   return null;
 }
+function pickArt(x,z){
+  if(view.s<4.5)return null;
+  const tol=Math.max(.3,7/view.s);
+  for(const info of LY.rooms.values())for(const sl of info.slots){
+    const dx=x-sl.x, dz=z-sl.z, along=dx*Math.cos(sl.rot)-dz*Math.sin(sl.rot), across=dx*Math.sin(sl.rot)+dz*Math.cos(sl.rot);
+    if(Math.abs(along)<=.85&&Math.abs(across)<=tol+.1)return {k:'art',id:sl.art.id};
+  }
+  return null;
+}
 function pick(x,z){
   const tol=4/view.s;
-  for(const it of [...D.items].reverse())if(it.type!=='rug'&&itemHit(it,x,z,tol))return {k:'item',id:it.id};
+  for(const it of [...D.items].reverse())if(it.type!=='rug'&&it.type!=='wallsign'&&itemHit(it,x,z,tol))return {k:'item',id:it.id};
+  const ah=pickArt(x,z);if(ah)return ah;
+  for(const it of [...D.items].reverse())if(it.type==='wallsign'&&itemHit(it,x,z,tol))return {k:'item',id:it.id};
   const g=pickDoor(x,z);if(g)return {k:'door',id:g.id};
   for(const w of [...D.walls].reverse())if(distSeg(x,z,w.x1,w.z1,w.x2,w.z2)<=Math.max(.25,7/view.s))return {k:'wall',id:w.id};
   for(const it of [...D.items].reverse())if(it.type==='rug'&&itemHit(it,x,z,0))return {k:'item',id:it.id};
@@ -3493,6 +3613,75 @@ function pickHandle(sx,sy){
   for(const [h,x,z] of handlesFor(o,sel.k)){const [hx,hy]=S(x,z);if(Math.abs(sx-hx)<=8&&Math.abs(sy-hy)<=8)return h;}
   return null;
 }
+/* Where an exhibit lands when you put it down at (x,z): the nearest wall
+   face, kept out of doorways. Returns the room it joins and its pin. */
+function artPlacement(x,z){
+  const w=L.wallSnap(D,x,z,3);
+  if(!w)return {err:'Move closer to a wall'};
+  if(w.kind==='wall'){
+    const W=w.ref;
+    if(W.h==='low')return {err:'Low walls are too short for pictures'};
+    const dx=W.x2-W.x1, dz=W.z2-W.z1, L2=dx*dx+dz*dz, Ln=Math.sqrt(L2);
+    if(Ln<1.2)return {err:'That wall is too short for a picture'};
+    const t=clamp(((w.x-W.x1)*dx+(w.z-W.z1)*dz)/L2,.6/Ln,1-.6/Ln);
+    const nx=-dz/Ln, nz=dx/Ln, face=((x-W.x1)*nx+(z-W.z1)*nz)>=0?1:-1;
+    const room=L.roomAt(D,(W.x1+W.x2)/2,(W.z1+W.z2)/2);
+    if(!room)return {err:'That wall isn’t inside a room'};
+    return {room,pin:{wall:W.id,t:+t.toFixed(4),face},x:W.x1+dx*t+nx*face*.12,z:W.z1+dz*t+nz*face*.12,rot:Math.atan2(nx*face,nz*face)};
+  }
+  const r=w.ref;
+  if(r.shape==='round'){
+    const info=LY.rooms.get(r.id), Rm=(info.rx+info.rz)/2;
+    let u=Math.atan2((w.z-info.cz)/info.rz,(w.x-info.cx)/info.rx);
+    for(const d of info.doors){const diff=((u-d.u)%(2*Math.PI)+3*Math.PI)%(2*Math.PI)-Math.PI, need=d.hw+.9/Rm;
+      if(Math.abs(diff)<need)u=d.u+(diff<0?-1:1)*need;}
+    const px=info.cx+(info.rx-.14)*Math.cos(u), pz=info.cz+(info.rz-.14)*Math.sin(u);
+    return {room:r,pin:{ang:+u.toFixed(4)},x:px,z:pz,rot:Math.atan2(info.cx-px,info.cz-pz)};
+  }
+  const s=L.sides(r).find(q=>Math.abs(((L.rotOf(q.n)*180/Math.PI-w.rot)%360+540)%360-180)<1);
+  if(!s)return {err:'Move closer to a wall'};
+  let u=snapI(s.axis==='x'?w.x:w.z);
+  for(const g of L.gapsOn(r,s,LY.G))if(u>g[0]-.8&&u<g[1]+.8)u=u<(g[0]+g[1])/2?g[0]-.8:g[1]+.8;
+  if(u<s.a+.7||u>s.b-.7)return {err:'Too close to a corner or a doorway'};
+  const pt=L.ptOn(s,u,WT+.02);
+  return {room:r,pin:{side:s.side,u},x:pt.x,z:pt.z,rot:L.rotOf(s.n)};
+}
+/* move an exhibit into a room (if it isn't there already) and pin it */
+function hangArt(a,pl){
+  const home=artHome(a.id);
+  if(home&&home.r!==pl.room)home.r.art=home.r.art.filter(q=>q.id!==a.id);
+  if(!home||home.r!==pl.room)pl.room.art.push(a);
+  a.pin=pl.pin;
+}
+/* the "choose a spot" mode: the next click hangs (or places) it */
+function startPlacing(p){
+  placing=p;setTool('placeArt');
+  toast(p.kind==='object'?`Now click on the floor where “${p.title}” should stand`:`Now click on the wall where “${p.title}” should hang`);
+}
+function placeHint(){
+  if(!placing)return '';
+  const t=`“${placing.title}”`;
+  return placing.kind==='object'?`<b>Place ${t}.</b> Click on the floor of any room to put the plinth there. Esc to cancel.`
+    :`<b>Hang ${t}.</b> Click on any wall — a room wall, a round room’s drum or a full-height free-standing wall. Esc to cancel.`;
+}
+function doPlace(x,z){
+  const P=placing;
+  if(P.kind==='object'){
+    const r=L.roomAt(D,x,z);if(!r){toast('Click on the floor of a room.');return;}
+    let it=P.item;
+    if(!it){it=P.newItem;D.items.push(it);}
+    it.x=snapI(x);it.z=snapI(z);
+    placing=null;relayout();commit();setTool('select');select('item',it.id);
+    toast(`Placed “${it.title}” in ${r.name}`,true);return;
+  }
+  const pl=artPlacement(x,z);
+  if(pl.err){toast(pl.err+'.');return;}
+  hangArt(P.art,pl);
+  placing=null;relayout();commit();setTool('select');select('art',P.art.id);
+  flash={id:P.art.id,until:performance.now()+3000};draw();
+  toast(`Hung “${P.art.title}” in ${pl.room.name}`,true);
+}
+
 /* where a click with the Doorway tool would open a doorway */
 function doorCandidate(x,z){
   const tol=Math.max(.9,12/view.s);
@@ -3567,8 +3756,9 @@ function buildRail(){
 }
 function setTool(id){
   tool=id;
+  if(id!=='placeArt')placing=null;
   document.querySelectorAll('.tl').forEach(b=>b.classList.toggle('on',b.dataset.tool===id));
-  $('hint').innerHTML=TOOLS.find(t=>t.id===id).hint;
+  $('hint').innerHTML=id==='placeArt'?placeHint():TOOLS.find(t=>t.id===id).hint;
   cv.style.cursor=id==='select'?'default':'crosshair';
   draw();
 }
@@ -3686,6 +3876,7 @@ cv.addEventListener('pointerdown',e=>{
   if(tool==='room'||tool==='round'){const p=[snap(wx,alt),snap(wz,alt)];drag={type:'newroom',a:p,b:p,shape:tool==='round'?'round':'rect',keep:e.shiftKey};return;}
   if(tool==='wall'){const p=[snap(wx,alt),snap(wz,alt)];drag={type:'newwall',a:p,b:p,keep:e.shiftKey};return;}
   if(tool==='door'){toggleDoor(wx,wz);return;}
+  if(tool==='placeArt'&&placing){doPlace(wx,wz);return;}
   if(PLACE.has(tool)){place(tool,wx,wz,e.shiftKey);return;}
 });
 cv.addEventListener('pointermove',e=>{
@@ -3762,6 +3953,7 @@ function moveSnapshot(hit){
     snap0.items=D.items.filter(it=>it.type==='rug'?insideRoom(o,it.x+it.w/2,it.z+it.d/2):insideRoom(o,it.x,it.z)).map(it=>({id:it.id,x:it.x,z:it.z}));
     snap0.walls=D.walls.filter(w=>insideRoom(o,w.x1,w.z1)&&insideRoom(o,w.x2,w.z2)).map(w=>({...w}));
     snap0.doors=D.doors.filter(d=>d.room===o.id).map(d=>({id:d.id,at:d.at,side:d.side}));
+    snap0.pins=o.art.filter(a=>a.pin&&a.pin.side).map(a=>({id:a.id,u:a.pin.u,side:a.pin.side}));
   }
   if(hit.k==='door')snap0.g=LY.G.find(g=>g.id===hit.id);
   return snap0;
@@ -3774,6 +3966,9 @@ function applyMove(dr,dx,dz,alt,wx,wz){
     for(const s of O.items){const it=find('item',s.id);if(it){it.x=s.x+ddx;it.z=s.z+ddz;}}
     for(const s of O.walls){const w=find('wall',s.id);if(w){w.x1=s.x1+ddx;w.x2=s.x2+ddx;w.z1=s.z1+ddz;w.z2=s.z2+ddz;}}
     for(const s of O.doors){const d=find('door',s.id);if(d)d.at=s.at+('NS'.includes(s.side)?ddx:ddz);}
+    for(const s of O.pins||[]){const a=o.art.find(q=>q.id===s.id);if(a&&a.pin)a.pin.u=s.u+('NS'.includes(s.side)?ddx:ddz);}
+  }else if(dr.k==='art'){
+    const pl=artPlacement(wx,wz);if(!pl.err)hangArt(o,pl);
   }else if(dr.k==='item'){
     if(o.type==='wallsign'){const w=L.wallSnap(D,wx,wz,3);if(w){o.x=w.x;o.z=w.z;o.rot=w.rot;}}
     else if(o.type==='rug'){o.x=snap(O.o.x+dx,alt);o.z=snap(O.o.z+dz,alt);}
@@ -3832,7 +4027,10 @@ addEventListener('keydown',e=>{
   if(mod&&(k==='s'||k==='S')){e.preventDefault();saveFile();return;}
   if(mod)return;
   if(k==='Delete'||k==='Backspace'){e.preventDefault();deleteSel();return;}
-  if(k==='Escape'){if(drag){if(drag.before)restore(drag.before);drag=null;draw();return;}if(tool!=='select')setTool('select');else select(null);return;}
+  if(k==='Escape'){
+    if(drag){if(drag.before)restore(drag.before);drag=null;draw();return;}
+    if(tool==='placeArt'){const p=placing;setTool('select');toast(p&&p.isNew?'Not added':'Left where it was');return;}
+    if(tool!=='select')setTool('select');else select(null);return;}
   if(k===' '){spaceDown=true;cv.style.cursor='grab';e.preventDefault();return;}
   if(k.startsWith('Arrow')&&sel){
     e.preventDefault();const st=e.shiftKey?2.5:SNAP;
@@ -3851,8 +4049,8 @@ addEventListener('keyup',e=>{if(e.key===' '){spaceDown=false;if(!drag)cv.style.c
 function nudge(dx,dz){
   const o=selObj();if(!o)return;
   const before=JSON.stringify(D);
+  if(sel.k==='art'||(sel.k==='item'&&o.type==='wallsign'))return;
   const dr={k:sel.k,id:sel.id,orig:moveSnapshot(sel)};
-  if(sel.k==='item'&&o.type==='wallsign')return;
   applyMove(dr,dx,dz,true,0,0);
   relayout();if(JSON.stringify(D)!==before)commit();draw();syncInspector();
 }
@@ -3868,7 +4066,8 @@ function deleteSel(){
     D.items=D.items.filter(it=>it.type==='start'||!(it.type==='rug'?insideRoom(o,it.x+it.w/2,it.z+it.d/2):insideRoom(o,it.x,it.z)));
     D.walls=D.walls.filter(w=>!(insideRoom(o,w.x1,w.z1)&&insideRoom(o,w.x2,w.z2)));
     toastUndo(`Deleted ${o.name||'the room'} and what was in it`);
-  }else if(sel.k==='door'){D.doors=D.doors.filter(d=>d!==o);toastUndo('Doorway closed');}
+  }else if(sel.k==='art'){const h=artHome(o.id);h.r.art=h.r.art.filter(q=>q!==o);toastUndo(`Removed “${o.title}”`);}
+  else if(sel.k==='door'){D.doors=D.doors.filter(d=>d!==o);toastUndo('Doorway closed');}
   else if(sel.k==='wall'){D.walls=D.walls.filter(w=>w!==o);toastUndo('Wall removed');}
   else{D.items=D.items.filter(i=>i!==o);toastUndo('Removed');}
   sel=null;relayout();commit();renderInspector();draw();
@@ -3883,6 +4082,7 @@ function duplicateSel(){
     if(free(o.x+o.w,o.z)&&o.x+o.w*2<=SITE)c.x=o.x+o.w;else if(o.z+o.d*2<=SITE)c.z=o.z+o.d;else{c.x+=2;c.z+=2;}
     D.rooms.push(c);
     const dx=c.x-o.x,dz=c.z-o.z;
+    for(const a of c.art){if(a.pin&&a.pin.side)a.pin.u+='NS'.includes(a.pin.side)?dx:dz;else if(a.pin&&a.pin.wall)delete a.pin;}
     for(const it of D.items.filter(it=>it.type!=='start'&&(it.type==='rug'?insideRoom(o,it.x+it.w/2,it.z+it.d/2):insideRoom(o,it.x,it.z)))){
       D.items.push({...JSON.parse(JSON.stringify(it)),id:uid('i'),x:it.x+dx,z:it.z+dz});
     }
@@ -3891,6 +4091,11 @@ function duplicateSel(){
     toast(joined.length?`Copied, with a doorway into ${joined.join(' and ')}`:'Room copied',true);return;
   }
   if(sel.k==='door')return;
+  if(sel.k==='art'){
+    const h=artHome(o.id), c=JSON.parse(JSON.stringify(o));c.id=uid('a');c.title=o.title+' (copy)';delete c.pin;
+    h.r.art.splice(h.r.art.indexOf(o)+1,0,c);relayout();commit();select('art',c.id);
+    toast(slotOf(c.id)?`Copied — the copy hangs itself in ${h.r.name}`:`Copied, but ${h.r.name}’s walls are full`,true);return;
+  }
   const c=JSON.parse(JSON.stringify(o));
   if(sel.k==='wall'){c.id=uid('w');c.x1+=1;c.x2+=1;c.z1+=1;c.z2+=1;D.walls.push(c);}
   else{if(o.type==='start')return;c.id=uid('i');
@@ -3990,9 +4195,16 @@ function renderInspector(){
   binds=[];
   const p=$('insp');const scroll=p.scrollTop;p.innerHTML='';
   const o=selObj();
-  p.append(el('div',{class:'addBar'},el('button',{type:'button',class:'btn prim',onclick:()=>openAddExhibit(),
-    html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add an exhibit'})));
-  if(!o)p.append(...galleryPanel());
+  const nEx=D.rooms.reduce((n,r)=>n+r.art.length,0)+D.items.filter(i=>i.type==='plinth').length;
+  const tab=(id,lab)=>el('button',{type:'button',class:panelTab===id?'on':'',onclick:()=>{panelTab=id;openArt=null;renderInspector();p.scrollTop=0;}},lab);
+  const bar=el('div',{class:'addBar'},el('button',{type:'button',class:'btn prim',onclick:()=>openAddExhibit(),
+    html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add an exhibit'}),
+    el('div',{class:'tabs',role:'tablist'},tab('edit',o?'Selected':'Gallery'),tab('exhibits',`All exhibits (${nEx})`)));
+  p.append(bar);
+  p.style.setProperty('--ab',bar.offsetHeight+'px');
+  if(panelTab==='exhibits')p.append(...exhibitsPanel());
+  else if(!o)p.append(...galleryPanel());
+  else if(sel.k==='art')p.append(...artPanel(o));
   else if(sel.k==='room')p.append(...roomPanel(o));
   else if(sel.k==='door')p.append(...doorPanel(o));
   else if(sel.k==='wall')p.append(...wallPanel(o));
@@ -4031,7 +4243,8 @@ function galleryPanel(){
 function focusOn([k,id]){
   const o=find(k,id);if(!o)return;
   let x,z;
-  if(k==='room'){x=o.x+o.w/2;z=o.z+o.d/2;}else if(k==='door'){const g=LY.G.find(g=>g.id===id);if(!g)return;x=g.cx;z=g.cz;}
+  if(k==='art'){const sl=slotOf(id), h=artHome(id);if(sl){x=sl.x;z=sl.z;}else if(h){x=h.r.x+h.r.w/2;z=h.r.z+h.r.d/2;}else return;}
+  else if(k==='room'){x=o.x+o.w/2;z=o.z+o.d/2;}else if(k==='door'){const g=LY.G.find(g=>g.id===id);if(!g)return;x=g.cx;z=g.cz;}
   else if(k==='wall'){x=(o.x1+o.x2)/2;z=(o.z1+o.z2)/2;}else{x=o.x;z=o.z;}
   const [sx,sy]=S(x,z);
   if(sx<40||sy<40||sx>CW-40||sy>CH-40){view.ox+=CW/2-sx;view.oy+=CH/2-sy;draw();}
@@ -4081,40 +4294,116 @@ function moveRoomTo(r,x,z){
   const dr={k:'room',id:r.id,orig:moveSnapshot({k:'room',id:r.id})};
   applyMove(dr,x-r.x,z-r.z,true,0,0);
 }
+/* how an exhibit is hung right now */
+function artStatus(a){
+  const sl=slotOf(a.id);
+  return !sl?['none','Not hung — no wall space']:sl.pinned?['pin','Placed by hand']:['','Hung automatically'];
+}
+function showArt(id){select('art',id);focusOn(['art',id]);flash={id,until:performance.now()+2500};draw();}
+/* the fields for one exhibit, used in the room panel, its own panel and the exhibits tab */
+function artEditor(r,a,{onTitle,order}={}){
+  const i=r.art.indexOf(a);
+  return el('div',{class:'ab'},
+    ui.f('Title',ui.text(a,'title',{after:()=>onTitle?.(a.title)})),
+    ui.f('Artist or maker',ui.text(a,'author',{ph:'e.g. A. Okonkwo · Watercolour'})),
+    ui.f('Kind',ui.seg([['image','Picture'],['text','Written piece']],a.type,v=>{a.type=v;changed();})),
+    ui.f(a.type==='text'?'The writing itself':'Story or description',ui.text(a,'text',{area:true,rows:4,ph:a.type==='text'?'Line breaks are kept':'Shown when visitors press E'})),
+    ui.check('Hang a label beside it (with visitors’ responses)',a.label,v=>{a.label=v;changed();}),
+    a.type==='image'?el('div',{class:'btns'},ui.btn(a.img?'Replace picture…':'Choose picture…',()=>pickImages(r,a)),
+      a.img?ui.btn('Remove picture',()=>{a.img=null;delete a.aspect;changed();}):null):null,
+    el('div',{class:'btns',style:'margin-top:8px'},
+      ui.btn('⌖ Choose its spot',()=>startPlacing({kind:'art',art:a,title:a.title||'Untitled',isNew:false})),
+      a.pin?ui.btn('Hang automatically',()=>{delete a.pin;changed();toast('It will now find its own place on the walls');}):null,
+      ui.btn('Show on plan',()=>showArt(a.id))),
+    order?el('div',{class:'btns',style:'margin-top:8px'},
+      ui.btn('↑ Earlier',()=>{if(i>0){[r.art[i-1],r.art[i]]=[r.art[i],r.art[i-1]];changed();}}),
+      ui.btn('↓ Later',()=>{if(i<r.art.length-1){[r.art[i+1],r.art[i]]=[r.art[i],r.art[i+1]];changed();}})):null);
+}
+function artRow(r,a,{order,showRoom}={}){
+  const isOpen=openArt===a.id, [cls,st]=artStatus(a);
+  const th=el('div',{class:'th',style:a.img?`background-image:url(${a.img})`:a.type==='text'?'background:#f3ecdb':''},
+    !a.img?el('span',{style:'display:flex;height:100%;align-items:center;justify-content:center;font-size:16px;color:#a08a5f'},a.type==='text'?'¶':'▧'):null);
+  const t1=el('div',{class:'t1'},a.title||'Untitled');
+  const card=el('div',{class:'art','data-find':`${a.title} ${a.author} ${r.name}`.toLowerCase()},
+    el('div',{class:'ah',onclick:()=>{openArt=isOpen?null:a.id;renderInspector();}},th,
+      el('div',{class:'an'},t1,el('div',{class:'t2'},[a.author||(a.img?'Your picture':'Placeholder'),showRoom?r.name:null].filter(Boolean).join(' · '))),
+      el('span',{class:'pill '+cls,title:st},cls==='pin'?'Placed':cls==='none'?'Not hung':'Auto'),
+      el('button',{class:'x',title:'Remove this work',onclick:ev=>{ev.stopPropagation();r.art=r.art.filter(q=>q!==a);changed();toastUndo('Work removed');}},'×')));
+  if(isOpen)card.append(artEditor(r,a,{order,onTitle:t=>{t1.textContent=t||'Untitled';}}));
+  return card;
+}
 function artSection(r,info){
   const cap=info?info.capacity:0;
-  const list=el('div',{});
-  r.art.forEach((a,i)=>{
-    const isOpen=openArt===a.id;
-    const th=el('div',{class:'th',style:a.img?`background-image:url(${a.img})`:a.type==='text'?'background:#f3ecdb':''},
-      !a.img?el('span',{style:'display:flex;height:100%;align-items:center;justify-content:center;font-size:16px;color:#a08a5f'},a.type==='text'?'¶':'▧'):null);
-    const card=el('div',{class:'art'},
-      el('div',{class:'ah',onclick:()=>{openArt=isOpen?null:a.id;renderInspector();}},th,
-        el('div',{class:'an'},el('div',{class:'t1'},a.title||'Untitled'),el('div',{class:'t2'},a.author||(a.img?'Your picture':'Placeholder'))),
-        el('button',{class:'x',title:'Remove this work',onclick:ev=>{ev.stopPropagation();r.art.splice(i,1);changed();toastUndo('Work removed');}},'×')));
-    if(isOpen)card.append(el('div',{class:'ab'},
-      ui.f('Title',ui.text(a,'title')),
-      ui.f('Artist or maker',ui.text(a,'author',{ph:'e.g. A. Okonkwo · Watercolour'})),
-      ui.f('Kind',ui.seg([['image','Picture'],['text','Written piece']],a.type,v=>{a.type=v;changed();})),
-      ui.f(a.type==='text'?'The writing itself':'Story or description',ui.text(a,'text',{area:true,rows:4,ph:a.type==='text'?'Line breaks are kept':'Shown when visitors press E'})),
-      ui.check('Hang a label beside it (with visitors’ responses)',a.label,v=>{a.label=v;changed();}),
-      a.type==='image'?el('div',{class:'btns'},ui.btn(a.img?'Replace picture…':'Choose picture…',()=>pickImages(r,a)),
-        a.img?ui.btn('Remove picture',()=>{a.img=null;delete a.aspect;changed();}):null):null,
-      el('div',{class:'btns',style:'margin-top:8px'},
-        ui.btn('↑ Earlier',()=>{if(i>0){[r.art[i-1],r.art[i]]=[r.art[i],r.art[i-1]];changed();}}),
-        ui.btn('↓ Later',()=>{if(i<r.art.length-1){[r.art[i+1],r.art[i]]=[r.art[i],r.art[i+1]];changed();}}))));
-    list.append(card);
-  });
   const over=info&&info.overflow;
   return ui.sec(['Artworks',el('span',{class:'pill'+(over?' warn':'')},over?`${over} don’t fit`:`${r.art.length} hung`)],
-    list,
+    el('div',{},...r.art.map(a=>artRow(r,a,{order:true}))),
     over?el('div',{class:'help',style:'color:#9a3a22;margin:0 0 8px'},`There isn’t enough clear wall for ${over} of these. Make the room bigger, hang on more walls, or remove a few.`):null,
     el('div',{class:'btns'},
       ui.btn('⤒ Upload pictures',()=>pickImages(r)),
       ui.btn('+ Placeholder',()=>{const a=placeholder(r.art.length);r.art.push(a);changed();})),
-    el('div',{class:'help'},`Pictures hang themselves around the walls, clear of doorways and signs — gold ticks on the plan show where.${cap?` These walls take about ${cap}.`:''}`),
+    el('div',{class:'help'},`Works hang themselves around the walls, clear of doorways and signs — gold ticks on the plan show where. Drag a tick to pin a work to a spot.${cap?` These walls take about ${cap}.`:''}`),
     r.shape==='rect'?ui.f('Hang works on',ui.chips([['N','North wall'],['E','East'],['S','South'],['W','West']],r.artWalls,v=>{
-      r.artWalls=r.artWalls.includes(v)?r.artWalls.filter(s=>s!==v):[...r.artWalls,v];changed();})):null);
+      r.artWalls=r.artWalls.includes(v)?r.artWalls.filter(s=>s!==v):[...r.artWalls,v];changed();}),'Applies to works hung automatically.'):null);
+}
+/* ---- one exhibit, selected on the plan ---- */
+function artPanel(a){
+  const {r}=artHome(a.id), [cls,st]=artStatus(a);
+  const rooms=[...D.rooms].sort((x,y)=>(x.num||999)-(y.num||999));
+  const roomSel=el('select',{},...rooms.map(q=>el('option',{value:q.id},(q.num?q.num+' · ':'')+(q.name||'Room'))));
+  roomSel.value=r.id;
+  roomSel.onchange=()=>{const to=find('room',roomSel.value);r.art=r.art.filter(q=>q!==a);delete a.pin;to.art.push(a);changed();
+    toast(slotOf(a.id)?`Moved to ${to.name} — it hangs itself there`:`Moved to ${to.name}, but its walls are full`,true);};
+  return [
+    head(a.type==='text'?'Written piece':'Exhibit',a.title||'Untitled',`In ${r.name} · ${st}`),
+    ui.sec('Where it hangs',
+      el('div',{class:'help',style:'margin:0 0 10px'},cls==='pin'?'Pinned to this spot. Drag its tick on the plan to move it along the walls, even into another room.'
+        :cls==='none'?'There’s no clear wall left in this room. Choose a spot for it, move it to another room, or make the room bigger.'
+        :'It finds its own place among the other works. Drag its tick on the plan, or choose a spot, to pin it.'),
+      ui.f('Room',roomSel,'Moving it to another room lets it hang itself there.')),
+    ui.sec('About it',artEditor(r,a,{onTitle:t=>{const h=$('insp').querySelector('.ins-title');if(h)h.textContent=t||'Untitled';}})),
+    ui.sec(null,el('div',{class:'btns'},ui.btn('Duplicate',duplicateSel),ui.btn('Remove exhibit',deleteSel,'danger')))
+  ];
+}
+/* ---- the "All exhibits" tab ---- */
+let exFilter='';
+function exhibitsPanel(){
+  const rooms=[...D.rooms].sort((x,y)=>(x.num||999)-(y.num||999));
+  const search=el('input',{type:'text',placeholder:'Find an exhibit by title, artist or room'});
+  search.value=exFilter;
+  const list=el('div',{});
+  const filter=()=>{exFilter=search.value;const q=exFilter.trim().toLowerCase();
+    list.querySelectorAll('[data-find]').forEach(c=>{c.style.display=!q||c.dataset.find.includes(q)?'':'none';});
+    list.querySelectorAll('[data-group]').forEach(g=>{g.style.display=[...g.querySelectorAll('[data-find]')].some(c=>c.style.display!=='none')?'':'none';});};
+  search.oninput=filter;
+  for(const r of rooms){
+    const plinths=D.items.filter(it=>it.type==='plinth'&&L.roomAt(D,it.x,it.z)===r);
+    if(!r.art.length&&!plinths.length)continue;
+    const g=el('div',{'data-group':''},
+      el('div',{class:'exRoom'},el('span',{},(r.num?r.num+' · ':'')+r.name),el('button',{type:'button',onclick:()=>select('room',r.id)},'Room settings')));
+    for(const a of r.art)g.append(artRow(r,a,{order:true}));
+    for(const it of plinths){
+      const isOpen=openArt===it.id, t1=el('div',{class:'t1'},it.title||'An object');
+      const card=el('div',{class:'art','data-find':`${it.title} ${it.author} ${r.name}`.toLowerCase()},
+        el('div',{class:'ah',onclick:()=>{openArt=isOpen?null:it.id;renderInspector();}},
+          el('div',{class:'th',style:'display:flex;align-items:center;justify-content:center;color:#a08a5f;font-size:16px'},'◆'),
+          el('div',{class:'an'},t1,el('div',{class:'t2'},it.author||'Object on a plinth')),
+          el('span',{class:'pill pin'},'Plinth')));
+      if(isOpen)card.append(el('div',{class:'ab'},
+        ui.f('Title',ui.text(it,'title',{after:()=>{t1.textContent=it.title||'An object';}})),
+        ui.f('Maker',ui.text(it,'author',{ph:'e.g. Ceramics · R. Ahmed'})),
+        ui.f('Story or description',ui.text(it,'text',{area:true,rows:3,ph:'Shown when visitors press E'})),
+        el('div',{class:'btns'},ui.btn('⌖ Choose its spot',()=>startPlacing({kind:'object',item:it,title:it.title||'An object',isNew:false})),
+          ui.btn('Show on plan',()=>{select('item',it.id);focusOn(['item',it.id]);}))));
+      g.append(card);
+    }
+    list.append(g);
+  }
+  const has=list.childElementCount>0;
+  queueMicrotask(filter);
+  return [
+    head('Exhibits','All exhibits','Every work in the gallery, room by room. Click one to edit its words or picture, or to choose where it hangs.'),
+    ui.sec(null,has?ui.f(null,search):null,has?list:el('div',{class:'help',style:'margin:0'},'No exhibits yet — use “Add an exhibit” above.'))
+  ];
 }
 let imgTarget=null;
 function pickImages(r,a){imgTarget={r,a};const f=$('artFiles');f.multiple=!a;f.value='';f.click();}
@@ -4153,7 +4442,7 @@ function shrinkImage(file){
 }
 
 /* ---- "Add an exhibit": one dialog for pictures, writing and objects ---- */
-const NEW={roomId:null,kind:'image',title:'',author:'',text:'',label:true,file:null,preview:null};
+const NEW={roomId:null,kind:'image',where:'pick',title:'',author:'',text:'',label:true,file:null,preview:null};
 function defaultRoomId(){
   const o=selObj();
   if(o&&sel.k==='room')return o.id;
@@ -4171,7 +4460,7 @@ function roomHasSpace(roomId,label){
 function openAddExhibit(){
   if(!D.rooms.length){toast('Draw a room first — exhibits hang on its walls. Choose the Room tool (R).');return;}
   if(NEW.preview)URL.revokeObjectURL(NEW.preview);
-  Object.assign(NEW,{roomId:defaultRoomId(),kind:'image',title:'',author:'',text:'',label:true,file:null,preview:null});
+  Object.assign(NEW,{roomId:defaultRoomId(),kind:'image',where:'pick',title:'',author:'',text:'',label:true,file:null,preview:null});
   renderAddCard();openModal('addDlg');
   setTimeout(()=>$('addCard').querySelector('input[type=text]')?.focus(),50);
 }
@@ -4205,10 +4494,11 @@ function renderAddCard(){
   c.append(
     el('button',{class:'b-close','data-close':'','aria-label':'Close'},'×'),
     el('h2',{},'Add an exhibit'),
-    el('p',{class:'lead',style:'margin-bottom:16px'},'Choose a room and it hangs itself on a clear stretch of wall. You can change everything later in the room’s panel.'),
+    el('p',{class:'lead',style:'margin-bottom:16px'},'Describe it here, then choose exactly where it goes. You can change everything later from the “All exhibits” tab.'),
     ui.f('What is it?',ui.seg([['image','Picture'],['text','Written piece'],['object','Object on a plinth']],NEW.kind,v=>{NEW.kind=v;renderAddCard();})),
-    ui.f('Which room',roomSel),
-    fitNote(),
+    ui.f('Where should it go?',ui.seg([['pick',isObj?'I’ll click a spot on the floor':'I’ll click a spot on a wall'],['auto','Put it in a room for me']],NEW.where,v=>{NEW.where=v;renderAddCard();})),
+    NEW.where==='auto'?ui.f('Which room',roomSel):null,
+    NEW.where==='auto'?fitNote():null,
     isPic?ui.f('Picture',drop):null,
     field('Title','title',{ph:isObj?'e.g. Bowl with blue glaze':isPic?'e.g. Evening, River Avon':'e.g. Letter to my first patient'}),
     field(isObj?'Maker':'Artist or author','author',{ph:'e.g. A. Okonkwo · Watercolour'}),
@@ -4216,7 +4506,7 @@ function renderAddCard(){
       ph:NEW.kind==='text'?'Line breaks are kept':'Shown when visitors press E to look closer'}),
     !isObj?ui.check('Hang a label beside it (visitors can pin responses to it)',NEW.label,v=>{NEW.label=v;renderAddCard();}):null,
     el('div',{class:'btns',style:'margin-top:6px'},el('button',{class:'btn','data-close':''},'Cancel'),
-      el('button',{class:'btn prim',onclick:submitExhibit},'Add exhibit')),
+      el('button',{class:'btn prim',onclick:submitExhibit},NEW.where==='pick'?'Next: choose its spot →':'Add exhibit')),
     el('p',{class:'help',style:'margin-top:14px'},'Exhibits are saved inside this design, in this browser. To keep a copy or move it to another computer, use File → Save design file, or Export HTML.'));
 }
 function setExFile(f){
@@ -4239,6 +4529,19 @@ function freeSpot(r){
 async function submitExhibit(){
   const r=find('room',NEW.roomId);if(!r)return;
   const title=NEW.title.trim()||(NEW.kind==='object'?'An object':'Untitled');
+  if(NEW.where==='pick'){
+    // describe now, place with the next click on the plan
+    if(NEW.kind==='object'){
+      const it=L.fix({rooms:[],doors:[],walls:[],items:[{id:uid('i'),type:'plinth',x:0,z:0,rot:0,title,author:NEW.author.trim(),text:NEW.text}]}).items[0];
+      closeModals();startPlacing({kind:'object',newItem:it,title,isNew:true});return;
+    }
+    const art={id:uid('a'),title,author:NEW.author.trim(),text:NEW.text,type:NEW.kind==='text'?'text':'image',label:NEW.label};
+    if(NEW.kind==='image'&&NEW.file){
+      try{Object.assign(art,await shrinkImage(NEW.file));}
+      catch(e){toast('That file couldn’t be read as a picture — try a JPEG or PNG.');return;}
+    }else if(NEW.kind==='image')art.aspect=.75;
+    closeModals();startPlacing({kind:'art',art,title,isNew:true});return;
+  }
   if(NEW.kind==='object'){
     const [x,z]=freeSpot(r);
     const it=L.fix({rooms:[],doors:[],walls:[],items:[{id:uid('i'),type:'plinth',x,z,rot:0,title,author:NEW.author.trim(),text:NEW.text}]}).items[0];
@@ -4252,9 +4555,10 @@ async function submitExhibit(){
     catch(e){toast('That file couldn’t be read as a picture — try a JPEG or PNG.');return;}
   }else if(NEW.kind==='image')art.aspect=.75;
   r.art.push(art);relayout();commit();closeModals();
-  sel={k:'room',id:r.id};openArt=art.id;renderInspector();focusOn(['room',r.id]);
+  const hung=!!slotOf(art.id);
+  if(hung)select('art',art.id);else{sel={k:'room',id:r.id};openArt=art.id;panelTab='edit';renderInspector();}
+  focusOn(hung?['art',art.id]:['room',r.id]);
   if(narrow())$('insp').classList.add('show');
-  const hung=LY.rooms.get(r.id).slots.some(sl=>sl.art.id===art.id);
   flash={id:art.id,until:performance.now()+4000};draw();
   toast(hung?`Added “${title}” to ${r.name} — it’s flashing on the plan`:`Added “${title}” to ${r.name}, but its walls are full, so it isn’t hung yet`,true);
 }
@@ -4496,7 +4800,17 @@ document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>{
   if(a==='new5'){closeModals();loadDesign(template(),'The Dack Gallery — change anything you like');}
   if(a==='blank'){closeModals();loadDesign(blankDesign(),'A blank site — choose the Room tool (R) and drag to draw');setTool('room');}
   if(a==='open')openFile();
+  if(a==='continue')closeModals();
 });
+/* the start screen opens every time the app does; "Continue" picks up the
+   design saved in this browser */
+function showStart(canContinue){
+  const bar=$('contBar');
+  bar.classList.toggle('show',!!canContinue&&D.rooms.length>0);
+  const n=D.rooms.reduce((k,r)=>k+r.art.length,0)+D.items.filter(i=>i.type==='plinth').length;
+  $('contInfo').textContent=`“${D.title||'Untitled gallery'}” · ${D.rooms.length} room${D.rooms.length===1?'':'s'} · ${n} exhibit${n===1?'':'s'}`;
+  openModal('welcome');
+}
 const fileMenu=$('fileMenu');
 $('fileBtn').onclick=e=>{e.stopPropagation();fileMenu.classList.toggle('open');};
 addEventListener('click',()=>fileMenu.classList.remove('open'));
@@ -4508,7 +4822,7 @@ fileMenu.querySelectorAll('button').forEach(b=>b.onclick=()=>{
   if(a==='open')openFile();
   if(a==='save')saveFile();
   if(a==='export')openExport();
-  if(a==='welcome')openModal('welcome');
+  if(a==='welcome')showStart(true);
   if(a==='help')openModal('helpDlg');
   if(a==='promenade')window.open('promenade.html','_blank','noopener');
   if(a==='new5'||a==='blank')setTimeout(()=>toast('Started a new design',false,{label:'Undo',fn:undo}),0);
@@ -4555,8 +4869,7 @@ relayout();commit();
 resize();
 afterLoad(true);
 setTool('select');
-let seen=false;try{seen=!!localStorage.getItem(SEEN);}catch(e){}
-if(!seen||!saved)openModal('welcome');
+showStart(!!saved);
 window.__b={get D(){return D;},set D(v){loadDesign(v);},layout:()=>LY,view,select,setTool,walk,exportHTML,checks,template};
 </script>
 </body>
