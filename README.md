@@ -27,7 +27,7 @@ It's a static site with no build step. Serve the folder with any static host (Ve
 - **Start screen.** Start from **The Dack Gallery**, a fully editable, downloadable 3D gallery (an entrance
   hall, a long gallery, a rotunda, a sculpture court and a quiet room, all of which can be changed or added
   to), start from a blank site, or open a saved design. The site is 300 × 300 m. The start screen opens every
-  time the app does, with a **Continue** button for the design saved in this browser.
+  time the app does; close it to carry on with the design saved in this browser.
 - **Rooms.** Draw square or round rooms, drag them into place and resize them with the handles. Each room
   has its own name and route number, ceiling height, floor (oak parquet, flagstone, marble, concrete, or
   carpet in eight colours), wall colour, lighting mood, accent colour and placard text.

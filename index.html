@@ -363,12 +363,6 @@
     background:#fdf3e1;border:1px solid #ecd2a2;color:#6b4614;font-size:13.5px;line-height:1.45}
   .trial b{flex:none;padding:2px 8px;border-radius:20px;background:#c38d3c;color:#fff;font-size:11px;
     letter-spacing:.08em;text-transform:uppercase}
-  .contBar{display:none;width:100%;margin:0 0 14px;padding:14px 18px;border:none;border-radius:12px;cursor:pointer;
-    background:var(--b-brass2);color:#1d140b;text-align:left;font-size:15px;transition:.12s}
-  .contBar:hover{background:#d39d4b}
-  .contBar b{display:block;font-size:16px;margin-bottom:2px}
-  .contBar span{font-size:13px;opacity:.8}
-  .contBar.show{display:block}
   .choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .choice{text-align:left;padding:16px;border:1px solid var(--b-line2);border-radius:12px;background:#fff;cursor:pointer;transition:.12s}
   .choice:hover{border-color:var(--b-brass2);box-shadow:0 6px 18px rgba(120,80,20,.12);transform:translateY(-1px)}
@@ -480,7 +474,6 @@
     <p class="lead">Lay out rooms and walls on the plan, open doorways, lay carpets and put up signs — then
       walk through it in 3D and export it as a single web page you can share.</p>
     <p class="trial" role="note"><b>Trial</b><span>This is a trial version, for experimentation purposes only.</span></p>
-    <button class="contBar" id="contBar" data-start="continue"><b>Continue where you left off →</b><span id="contInfo"></span></button>
     <div class="choices">
       <button class="choice" data-start="new5">
         <svg viewBox="0 0 160 84"><g fill="#e4cfa9" stroke="#3b2a1d" stroke-width="2"><rect x="18" y="38" width="28" height="22"/><rect x="46" y="38" width="44" height="22"/><rect x="46" y="14" width="28" height="24"/><rect x="74" y="12" width="40" height="25"/></g><ellipse cx="102" cy="49" rx="12" ry="12" fill="#e4cfa9" stroke="#3b2a1d" stroke-width="2"/><g fill="#c38d3c"><rect x="44" y="45" width="4" height="7"/><rect x="88" y="45" width="4" height="7"/><rect x="56" y="36" width="7" height="4"/></g></svg>
@@ -4800,17 +4793,7 @@ document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>{
   if(a==='new5'){closeModals();loadDesign(template(),'The Dack Gallery — change anything you like');}
   if(a==='blank'){closeModals();loadDesign(blankDesign(),'A blank site — choose the Room tool (R) and drag to draw');setTool('room');}
   if(a==='open')openFile();
-  if(a==='continue')closeModals();
 });
-/* the start screen opens every time the app does; "Continue" picks up the
-   design saved in this browser */
-function showStart(canContinue){
-  const bar=$('contBar');
-  bar.classList.toggle('show',!!canContinue&&D.rooms.length>0);
-  const n=D.rooms.reduce((k,r)=>k+r.art.length,0)+D.items.filter(i=>i.type==='plinth').length;
-  $('contInfo').textContent=`“${D.title||'Untitled gallery'}” · ${D.rooms.length} room${D.rooms.length===1?'':'s'} · ${n} exhibit${n===1?'':'s'}`;
-  openModal('welcome');
-}
 const fileMenu=$('fileMenu');
 $('fileBtn').onclick=e=>{e.stopPropagation();fileMenu.classList.toggle('open');};
 addEventListener('click',()=>fileMenu.classList.remove('open'));
@@ -4822,7 +4805,7 @@ fileMenu.querySelectorAll('button').forEach(b=>b.onclick=()=>{
   if(a==='open')openFile();
   if(a==='save')saveFile();
   if(a==='export')openExport();
-  if(a==='welcome')showStart(true);
+  if(a==='welcome')openModal('welcome');
   if(a==='help')openModal('helpDlg');
   if(a==='promenade')window.open('promenade.html','_blank','noopener');
   if(a==='new5'||a==='blank')setTimeout(()=>toast('Started a new design',false,{label:'Undo',fn:undo}),0);
@@ -4869,7 +4852,9 @@ relayout();commit();
 resize();
 afterLoad(true);
 setTool('select');
-showStart(!!saved);
+/* the start screen opens every time the app does (so the trial notice is
+   always seen); closing it carries on with the design saved in this browser */
+openModal('welcome');
 window.__b={get D(){return D;},set D(v){loadDesign(v);},layout:()=>LY,view,select,setTool,walk,exportHTML,checks,template};
 </script>
 </body>
