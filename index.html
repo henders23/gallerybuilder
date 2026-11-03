@@ -175,7 +175,7 @@
     background:var(--b-oak);color:#f1e7d6;border-bottom:1px solid #000}
   .brand{display:flex;align-items:center;gap:9px;font-family:var(--b-serif);font-size:18px;white-space:nowrap;margin-right:8px}
   .brand svg{color:var(--b-brass2)}
-  .titleInput{width:min(300px,26vw);padding:7px 10px;border-radius:7px;border:1px solid transparent;
+  .titleInput{width:300px;flex:0 1 300px;min-width:110px;padding:7px 10px;border-radius:7px;border:1px solid transparent;
     background:rgba(255,255,255,.07);color:#f1e7d6!important;font-family:var(--b-serif)!important;font-size:16px!important}
   .titleInput:hover{border-color:rgba(255,255,255,.18)}
   .titleInput:focus{outline:none;border-color:var(--b-brass2);background:rgba(255,255,255,.12)}
@@ -188,7 +188,13 @@
   .tb.primary{background:var(--b-brass2);border-color:var(--b-brass2);color:#1d140b!important;font-weight:600}
   .tb.primary:hover{background:#d39d4b}
   .tb.accent{border-color:var(--b-brass2);color:#f3c886!important}
-  .spacer{flex:1}
+  .spacer{flex:1;min-width:8px}
+  #topbar>.tb,#topbar>.ib,#topbar>.menuWrap,.brand{flex:none}
+  @media (max-width:1240px){.saveState{display:none}}
+  .tb.clear{border-color:rgba(240,160,124,.45);color:#f6c3ac!important}
+  .tb.clear:hover{background:rgba(180,65,47,.35);border-color:#f0a07c}
+  .tb.clear .short{display:none}
+  @media (max-width:1320px){.tb.clear .long{display:none}.tb.clear .short{display:inline}}
   .saveState{font-size:12px;color:rgba(241,231,214,.55);margin-right:6px;white-space:nowrap}
   .saveState.bad{color:#f0a07c}
   .menuWrap{position:relative}
@@ -288,6 +294,10 @@
   .btn:hover{border-color:var(--b-brass2);background:#fffaf0}
   .btn.danger{color:var(--b-red)}
   .btn.danger:hover{border-color:var(--b-red);background:#fff4f1}
+  .btn.dangerSolid{background:var(--b-red);border-color:var(--b-red);color:#fff!important;font-weight:600}
+  .btn.dangerSolid:hover{background:#9c3222;border-color:#9c3222}
+  .loseList{margin:0 0 18px;padding:12px 14px 12px 32px;background:#fdf1ea;border:1px solid #f3d6c8;border-radius:10px;
+    font-size:14px;line-height:1.6;color:#6b2a1c}
   .btn.prim{background:var(--b-brass2);border-color:var(--b-brass2);color:#1d140b;font-weight:600}
   .btn.prim:hover{background:#d39d4b}
   .btns{display:flex;flex-wrap:wrap;gap:7px}
@@ -372,12 +382,16 @@
     .choices,.how{grid-template-columns:1fr}
     .keys{grid-template-columns:auto 1fr}
   }
+  @media (max-width:900px){.tb .lbl{display:none}}
   @media (max-width:640px){
     .titleInput{display:none}
-    .tb .lbl{display:none}
+    #topbar{gap:4px;padding:0 8px}
+    .tb{padding:0 10px}
+    .ib{width:32px}
     #hint{max-width:calc(100% - 28px);bottom:62px}
     #scaleBar{display:none}
   }
+  @media (max-width:480px){#redoBtn,#helpBtn{display:none}}
 </style>
 </head>
 <body>
@@ -402,10 +416,15 @@
         <button data-act="export">Export as HTML…</button>
         <hr>
         <button data-act="welcome">Show the start screen</button>
+        <button data-act="help">Help and keyboard shortcuts</button>
         <button data-act="promenade">Visit the original Health &amp; Life Promenade ↗</button>
       </div>
     </div>
     <button class="ib" id="helpBtn" title="Help and keyboard shortcuts" aria-label="Help">?</button>
+    <span class="spacer"></span>
+    <button class="tb clear" id="clearBtn" title="Delete everything saved in this browser and start a new gallery">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+      <span class="lbl"><span class="long">Clear all data and start a new gallery</span><span class="short">Clear all &amp; start new</span></span></button>
     <span class="spacer"></span>
     <span id="saveState" class="saveState"></span>
     <button class="tb" id="inspToggle" style="display:none" title="Show the settings panel">☰ <span class="lbl">Settings</span></button>
@@ -460,6 +479,24 @@
       <div><b>3 · Walk &amp; share</b>Press <i>Walk through</i> to try it in 3D, then <i>Export HTML</i> to share it.</div>
     </div>
     <p class="credit">Gallery Builder · designed and built by Paul Hendrie</p>
+  </div>
+</div>
+
+<!-- clear everything -->
+<div class="b-modal" id="clearDlg">
+  <div class="b-card narrow">
+    <button class="b-close" data-close aria-label="Close">&times;</button>
+    <h2>Are you sure?</h2>
+    <p class="lead" style="margin-bottom:14px">This clears all data and starts a new gallery. Everything this app has saved in this
+      browser is deleted for good — it can’t be undone.</p>
+    <ul class="loseList" id="clearList"></ul>
+    <p class="help" style="margin:-6px 0 18px">Want to keep it? Save a copy first — you can open it again later with File → Open.</p>
+    <div class="btns">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn" id="clearSave">Save a copy first</button>
+      <button class="btn dangerSolid" id="clearGo">Yes, clear everything</button>
+    </div>
+    <p class="help" id="clearStatus" style="margin-top:12px"></p>
   </div>
 </div>
 
@@ -2971,8 +3008,9 @@ function loadDesign(d,msg){
   D=L.fix(d);sel=null;openArt=null;relayout();commit();afterLoad(true);
   if(msg)toast(msg,true);
 }
-let saveTimer=0;
+let saveTimer=0, wiping=false;
 function save(){
+  if(wiping)return;
   clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>{
     const st=$('saveState');
@@ -4466,11 +4504,32 @@ fileMenu.querySelectorAll('button').forEach(b=>b.onclick=()=>{
   if(a==='save')saveFile();
   if(a==='export')openExport();
   if(a==='welcome')openModal('welcome');
+  if(a==='help')openModal('helpDlg');
   if(a==='promenade')window.open('promenade.html','_blank','noopener');
   if(a==='new5'||a==='blank')setTimeout(()=>toast('Started a new design',false,{label:'Undo',fn:undo}),0);
 });
 $('undoBtn').onclick=undo;$('redoBtn').onclick=redo;
 $('helpBtn').onclick=()=>openModal('helpDlg');
+/* "Clear all data": wipe everything this app keeps in the browser, then
+   reload, so the undo history, uploaded pictures and anything held in
+   memory (like responses pinned while walking) go too */
+$('clearBtn').onclick=()=>{
+  const works=D.rooms.reduce((n,r)=>n+r.art.length,0)+D.items.filter(i=>i.type==='plinth').length;
+  const pics=D.rooms.reduce((n,r)=>n+r.art.filter(a=>a.img).length,0);
+  const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
+  const list=$('clearList');list.innerHTML='';
+  const lines=[`“${D.title||'Untitled gallery'}”: ${plural(D.rooms.length,'room')}, ${plural(D.walls.length,'free-standing wall')} and ${D.items.length} ${D.items.length===1?'sign or object':'signs and objects'}`,
+    `${plural(works,'exhibit')}${pics?`, including ${plural(pics,'uploaded picture')}`:''}`,'Your undo history and all other changes'];
+  for(const t of lines)list.append(el('li',{},t));
+  $('clearStatus').textContent='';
+  openModal('clearDlg');
+};
+$('clearSave').onclick=()=>{saveFile();$('clearStatus').textContent='A copy has been downloaded. You can clear everything safely now.';};
+$('clearGo').onclick=()=>{
+  wiping=true;clearTimeout(saveTimer);
+  try{for(const k of Object.keys(localStorage))if(k.startsWith('gallerybuilder'))localStorage.removeItem(k);}catch(e){}
+  location.reload();
+};
 $('walkBtn').onclick=()=>walk();
 $('exportBtn').onclick=openExport;
 $('exGo').onclick=exportHTML;
