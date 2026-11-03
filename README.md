@@ -9,6 +9,8 @@ so anyone can lay out their own gallery.
 
 Designed and built by Paul Hendrie.
 
+> **Trial version.** Gallery Builder is a trial, for experimentation purposes only.
+
 ## Files
 
 | File | What it is |
